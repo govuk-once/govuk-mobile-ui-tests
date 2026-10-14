@@ -99,5 +99,3 @@ maestro hierarchy
 # Continuous mode, useful for interactively creating a test...
 maestro test -c filename.yaml
 ```
-
-test
