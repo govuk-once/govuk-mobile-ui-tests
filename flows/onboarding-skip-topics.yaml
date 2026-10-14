@@ -8,10 +8,14 @@ tags:
 - launchApp:
     clearState: true
 
-- runFlow: onboarding/accept-statistics-sharing.yaml
+- runFlow: onboarding/sign-in.yaml
 
-- runFlow: onboarding/view-all-screens.yaml
+- runFlow: onboarding/accept-terms.yaml
+
+- runFlow: onboarding/accept-statistics-sharing.yaml
 
 - runFlow: topics/skip-initial-topics-selection.yaml
 
 - runFlow: topics/validate-all-topics.yaml
+
+- runFlow: onboarding/skip-notifications.yaml
