@@ -44,7 +44,7 @@ xcrun xcodebuild -scheme 'GovUK' \
 build
 
 # Install the debug image on the simulator...
-xcrun simctl install Booted /Users/<your-login-id>/govuk-app/govuk-mobile-ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
+xcrun simctl install Booted /Users/loadesj/govuk-app/govuk-mobile-ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
 
 # -- or --
 
@@ -99,3 +99,5 @@ maestro hierarchy
 # Continuous mode, useful for interactively creating a test...
 maestro test -c filename.yaml
 ```
+
+test
