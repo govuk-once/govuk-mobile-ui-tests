@@ -1,0 +1,6 @@
+appId: uk.gov.govuk.dev
+
+---
+
+- assertVisible: "Allow notifications?"
+- tapOn: "Not now"

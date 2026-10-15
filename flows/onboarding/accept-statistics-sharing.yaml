@@ -2,5 +2,5 @@ appId: uk.gov.govuk.dev
 
 ---
 
-- assertVisible: "Allow statistics sharing"
-- tapOn: "Allow statistics sharing"
+- assertVisible: "Share statistics"
+- tapOn: "Share statistics"

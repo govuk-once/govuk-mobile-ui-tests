@@ -43,11 +43,6 @@ xcrun xcodebuild -scheme 'GovUK' \
 -derivedDataPath \
 build
 
-# Install the debug image on the simulator...
-xcrun simctl install Booted /Users/<your-login-id>/govuk-app/govuk-mobile-ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
-
-# -- or --
-
 # Using maestro iOS default...
 maestro start-device --platform ios
 ```
