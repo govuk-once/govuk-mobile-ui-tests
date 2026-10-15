@@ -1,2 +1,10 @@
 flows:
-  - "**"
+  - "tests/onboarding/*"
+  - "tests/topics/*"
+  - "tests/settings/*"
+
+env:
+  APP_ID: uk.gov.govuk.dev
+
+executionOrder:
+  continueOnFailure: true

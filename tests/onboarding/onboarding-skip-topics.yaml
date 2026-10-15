@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+name: "Onboarding - Skip Topics"
+
+tags:
+  - end-to-end
+  - regression
+  - onboarding
+  - p1
+
+---
+
+- launchApp:
+    clearState: true
+
+- runFlow: ../../subflows/onboarding/sign-in.yaml
+
+- runFlow: ../../subflows/onboarding/accept-terms.yaml
+
+- runFlow: ../../subflows/onboarding/accept-statistics-sharing.yaml
+
+- runFlow: ../../subflows/topics/skip-initial-topics-selection.yaml
+
+- runFlow: ../../subflows/topics/validate-all-topics.yaml
+
+- runFlow: ../../subflows/onboarding/skip-notifications.yaml

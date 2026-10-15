@@ -1,0 +1,15 @@
+appId: ${APP_ID}
+
+---
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Done"

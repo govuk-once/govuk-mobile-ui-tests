@@ -1,8 +1,0 @@
-appId: uk.gov.govuk.dev
-
----
-
-- assertVisible: "Select relevant topics"
-
-- assertVisible: "Skip"
-- tapOn: "Skip"

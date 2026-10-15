@@ -1,96 +1,115 @@
-# User Interaction Tests
+# GOV.UK Mobile UI Tests
 
-We're looking at [Maestro](https://maestro.mobile.dev/) for our end-to-end, integration and other 'user interaction' tests. We want:
+Automated end-to-end tests for the GOV.UK mobile app using [Maestro](https://maestro.mobile.dev/), targeting both iOS and Android from a single test suite.
 
-- to create tests once that can then be run on iOS and Android.
-- to keep all all of these tests in a single repository.
-- there to be no 'hooks' into the app codebase.
-- to add the tests as part of an individual developer's workflow and/or as part of our existing Continious Integration (CI) system.
-- to be able to flexibly combine tests for specific purposes and needs.
+## Project Structure
 
-Instructions for installing Maestro can be found [here](https://maestro.mobile.dev/getting-started/installing-maestro).
-
-## Getting started
-
-### Java
-
-To use Maestro, you'll need a Java JDK installed.
-
-For Android, if you're using Android Studio - it is most likely already installed.
-
-For iOS, Xcode does not install or require Java. However, Mac OS X comes with the Java runtime already installed, but you will also require the JDK, use these commands to check...
-
-```shell
-java -version   # runtime
-javac -version  # JDK
+```
+├── tests/              Orchestrator flows (what Maestro discovers and runs)
+│   ├── onboarding/     Onboarding journey tests
+│   ├── topics/         Topic selection/editing tests
+│   └── settings/       Settings persistence tests
+│
+├── subflows/           Reusable steps (called via runFlow:, never run directly)
+│   ├── onboarding/     Sign-in, accept terms, etc.
+│   ├── topics/         Select, validate, edit topics
+│   ├── settings/       Validate settings state
+│   └── navigation/     Cross-feature platform utilities (back, toggle checks)
+│
+├── platform/           Platform-specific implementations
+│   ├── android/        Android-only flows (organised by feature)
+│   └── ios/            iOS-only flows (organised by feature)
+│
+├── .github/workflows/  CI pipelines (smoke + regression)
+├── config.yaml         Maestro workspace config
+└── .env.example        Environment variable template
 ```
 
-If the JDK (`javac`) is not installed, or is not working correctly - the JDK can be installed via [homebrew](https://formulae.brew.sh/formula/openjdk) or using a tool such as [asdf](https://asdf-vm.com/).
+**Rule of thumb:** If a flow has `launchApp:`, it goes in `tests/`. Otherwise it goes in `subflows/` or `platform/`.
 
-Next we need to build the app you want to test, and deploy it on a running simulator.
+## Prerequisites
 
-### iOS
+- Java JDK ([homebrew](https://formulae.brew.sh/formula/openjdk) or [asdf](https://asdf-vm.com/))
+- [Maestro CLI](https://maestro.mobile.dev/getting-started/installing-maestro)
+- A running simulator/emulator with the GOV.UK app installed
 
-You can do this entirely within Xcode in the normal way using a simulator of your choosing, or via the Xcode CLI - using the default or a custom simulator as follows...
+### iOS Setup
 
 ```shell
-# Build the debug image...
 xcrun xcodebuild -scheme 'GovUK' \
--project 'GovUK.xcodeproj' \
--configuration Debug \
--sdk 'iphonesimulator' \
--destination 'generic/platform=iOS Simulator' \
--derivedDataPath \
-build
+  -project 'GovUK.xcodeproj' \
+  -configuration Debug \
+  -sdk 'iphonesimulator' \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath \
+  build
 
-# Using maestro iOS default...
 maestro start-device --platform ios
 ```
 
-### Android
-
-As with iOS, you can do this entirely within Android Studio in the normal way using a simulator of your choosing, or via the command line - using the default or a custom simulator as follows...
+### Android Setup
 
 ```shell
-# Build the debug image...
 ./gradlew assembleDebug
-
-# Start maestro android default...
 maestro start-device --platform android
-
-# Install the debug image on the simulator...
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Running the tests
+## Environment Variables
 
-Now that you have a running simulator that has your app installed on it, you can run the tests.
-
-Note that we are passing in an environment variable below as the `appId` that is required by Maestro to identify the app to start. This differs between the iOS and Android implementation of the GOV.UK app.
+Copy `.env.example` and fill in your credentials:
 
 ```shell
-cd /dir/where/your/tests/are
-
-maestro test filename.yaml
+cp .env.example .env
 ```
 
-You can also run tests by tag(s). For example:
+Required variables:
+
+| Variable | Description |
+|----------|-------------|
+| `GOVUK_EMAIL` | Test account email for sign-in |
+| `GOVUK_PASSWORD` | Test account password |
+| `APP_ID` | App bundle ID (default: `uk.gov.govuk.dev`, set in config.yaml) |
+
+## Running Tests
 
 ```shell
-maestro test --include-tags=<tag-name>(,tag-name) flows
+# Run all tests (uses config.yaml for flow discovery)
+maestro test
+
+# Run by tag
+maestro test --include-tags=smoke
+maestro test --include-tags=regression
+maestro test --include-tags=onboarding
+
+# Run a specific test directly
+maestro test tests/onboarding/onboarding-select-topics.yaml
+
+# Pass credentials inline (alternative to .env)
+maestro test --env GOVUK_EMAIL=you@example.com --env GOVUK_PASSWORD=secret
 ```
 
-## Other useful Maestro commands
+## Tagging Convention
 
-Maestro comes with some very useful tools to help you debug, identify issues and generally assist with test creation and maintenance.
+| Tag | Purpose |
+|-----|---------|
+| `smoke` | Critical path, fast — runs on every push/PR |
+| `regression` | Full coverage — runs nightly |
+| `end-to-end` | Multi-step user journeys |
+| `onboarding`, `topics`, `settings` | Feature area |
+| `p0`, `p1` | Priority (`p0` = must-not-break) |
+
+## Conventions
+
+- **Naming:** directories are lowercase singular nouns. Test files: `{feature}-{scenario}.yaml`. Sub-flow files: `{verb}-{subject}.yaml`.
+- **Platform handling:** Small differences use inline `when: platform:` conditionals in sub-flows. Larger divergences get separate files under `platform/android/` and `platform/ios/`.
+- **App ID:** Always use `appId: ${APP_ID}` — the value is set in `config.yaml`'s `env` block.
+- **Tags:** Only orchestrator test files in `tests/` carry tags. Sub-flows do not need tags.
+
+## Useful Maestro Commands
 
 ```shell
-# A GUI that visualises what Maestro can, and can not, access within your app...
-maestro studio
-
-# Prints out a JSON formatted listing of your apps structure. Also, useful in identifying why Maestro maybe unable to find specific elements within your app...
-maestro hierarchy
-
-# Continuous mode, useful for interactively creating a test...
-maestro test -c filename.yaml
+maestro studio          # GUI to visualise app structure
+maestro hierarchy       # JSON listing of app element tree
+maestro test -c file    # Continuous mode for interactive development
 ```

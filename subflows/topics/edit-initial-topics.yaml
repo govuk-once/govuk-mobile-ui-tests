@@ -1,0 +1,18 @@
+appId: ${APP_ID}
+
+---
+
+- assertVisible: "Edit"
+- tapOn: "Edit"
+
+- runFlow:
+    when:
+      platform: Android
+    file: ../../platform/android/topics/edit-initial-topics-android.yaml
+
+- runFlow:
+    when:
+      platform: iOS
+    file: ../../platform/ios/topics/edit-initial-topics-ios.yaml
+
+- runFlow: ../navigation/back-or-done.yaml

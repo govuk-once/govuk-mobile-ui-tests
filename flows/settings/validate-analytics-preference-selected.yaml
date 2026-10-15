@@ -1,8 +1,0 @@
-appId: uk.gov.govuk.dev
-
----
-
-- assertVisible: "Settings"
-- tapOn: "Settings"
-
-- runFlow: ../device-specific/share-app-usage-toggle-checked.yaml

@@ -1,0 +1,58 @@
+appId: ${APP_ID}
+
+---
+
+- scrollUntilVisible:
+    element:
+      text: "Benefits"
+- assertVisible: "Benefits"
+
+- scrollUntilVisible:
+    element:
+      text: "Business"
+- assertVisible: "Business"
+
+- scrollUntilVisible:
+    element:
+      text: "Care"
+- assertVisible: "Care"
+
+- scrollUntilVisible:
+    element:
+      text: "Driving and transport"
+- assertVisible: "Driving and transport"
+
+- scrollUntilVisible:
+    element:
+      text: "Employment"
+- assertVisible: "Employment"
+
+- scrollUntilVisible:
+    element:
+      text: "Health and disability"
+- assertVisible: "Health and disability"
+
+- scrollUntilVisible:
+    element:
+      text: "Money and tax"
+- assertVisible: "Money and tax"
+
+- scrollUntilVisible:
+    element:
+      text: "Parenting and guardianship"
+- assertVisible: "Parenting and guardianship"
+
+- scrollUntilVisible:
+    element:
+      text: "Retirement"
+- assertVisible: "Retirement"
+
+- scrollUntilVisible:
+    element:
+      text: "Studying and training"
+- assertVisible: "Studying and training"
+
+- scrollUntilVisible:
+    element:
+      text: "Travel abroad"
+- assertVisible: "Travel abroad"

@@ -1,0 +1,80 @@
+appId: ${APP_ID}
+
+---
+
+- scrollUntilVisible:
+    element:
+      text: "Benefits"
+- tapOn:
+    text: "1"
+    index: 0
+
+- scrollUntilVisible:
+    element:
+      text: "Business"
+- tapOn:
+    text: "0"
+    index: 1
+
+- scrollUntilVisible:
+    element:
+      text: "Care"
+- tapOn:
+    text: "0"
+    index: 1
+
+- scrollUntilVisible:
+    element:
+      text: "Driving and transport"
+- tapOn:
+    text: "1"
+    index: 2
+
+- scrollUntilVisible:
+    element:
+      text: "Employment"
+- tapOn:
+    text: "0"
+    index: 2
+
+- scrollUntilVisible:
+    element:
+      text: "Health and disability"
+- tapOn:
+    text: "0"
+    index: 2
+
+- scrollUntilVisible:
+    element:
+      text: "Money and tax"
+- tapOn:
+    text: "1"
+    index: 4
+
+- scrollUntilVisible:
+    element:
+      text: "Parenting and guardianship"
+- tapOn:
+    text: "0"
+    index: 3
+
+- scrollUntilVisible:
+    element:
+      text: "Retirement"
+- tapOn:
+    text: "0"
+    index: 3
+
+- scrollUntilVisible:
+    element:
+      text: "Studying and training"
+- tapOn:
+    text: "0"
+    index: 3
+
+- scrollUntilVisible:
+    element:
+      text: "Travel abroad"
+- tapOn:
+    text: "1"
+    index: 7

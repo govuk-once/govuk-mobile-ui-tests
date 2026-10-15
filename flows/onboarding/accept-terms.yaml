@@ -1,6 +1,0 @@
-appId: uk.gov.govuk.dev
-
----
-
-- assertVisible: "Terms and conditions"
-- tapOn: "Accept and continue"

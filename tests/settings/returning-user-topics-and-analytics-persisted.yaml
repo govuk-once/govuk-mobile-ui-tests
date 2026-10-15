@@ -1,0 +1,31 @@
+appId: ${APP_ID}
+name: "Returning User - Topics and Analytics Persisted"
+
+tags:
+  - end-to-end
+  - regression
+  - settings
+  - p1
+
+---
+
+- launchApp:
+    clearState: true
+
+- runFlow: ../../subflows/onboarding/sign-in.yaml
+
+- runFlow: ../../subflows/onboarding/accept-terms.yaml
+
+- runFlow: ../../subflows/onboarding/accept-statistics-sharing.yaml
+
+- runFlow: ../../subflows/topics/select-initial-topics.yaml
+
+- runFlow: ../../subflows/onboarding/skip-notifications.yaml
+
+- stopApp
+
+- launchApp
+
+- runFlow: ../../subflows/topics/validate-initial-topics.yaml
+
+- runFlow: ../../subflows/settings/validate-analytics-preference-selected.yaml
