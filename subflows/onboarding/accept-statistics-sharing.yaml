@@ -1,0 +1,6 @@
+appId: ${APP_ID}
+
+---
+
+- assertVisible: "Share statistics"
+- tapOn: "Share statistics"
