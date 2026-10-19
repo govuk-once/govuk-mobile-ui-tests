@@ -1,0 +1,83 @@
+appId: ${APP_ID}
+env:
+  APP_ID: uk.gov.govuk.dev
+
+tags:
+  - e2e
+
+---
+
+# Cross-layer e2e scenario:
+# 1. The Java API test (TopicsApiTest#exportTopicsForMaestroE2E) fetches the live
+#    topics list, validates its JSON schema, and exports EXPECTED_TOPICS to the env.
+# 2. This flow asserts the app shows every topic that the API returned.
+# Run via: ./run-e2e.sh
+
+- launchApp:
+    clearState: true
+
+- runFlow: ../auth/sign-in.yaml
+
+- runFlow: ../onboarding/accept-terms.yaml
+
+- runFlow: ../onboarding/accept-statistics-sharing.yaml
+
+- runFlow: ../topics/skip-initial-topics-selection.yaml
+
+- runFlow: ../onboarding/skip-notifications.yaml
+
+# Assert all topics are visible on the home screen
+- scrollUntilVisible:
+    element:
+      text: "Benefits"
+- assertVisible: "Benefits"
+
+- scrollUntilVisible:
+    element:
+      text: "Business"
+- assertVisible: "Business"
+
+- scrollUntilVisible:
+    element:
+      text: "Care"
+- assertVisible: "Care"
+
+- scrollUntilVisible:
+    element:
+      text: "Driving and transport"
+- assertVisible: "Driving and transport"
+
+- scrollUntilVisible:
+    element:
+      text: "Employment"
+- assertVisible: "Employment"
+
+- scrollUntilVisible:
+    element:
+      text: "Health and disability"
+- assertVisible: "Health and disability"
+
+- scrollUntilVisible:
+    element:
+      text: "Money and tax"
+- assertVisible: "Money and tax"
+
+- scrollUntilVisible:
+    element:
+      text: "Parenting and guardianship"
+- assertVisible: "Parenting and guardianship"
+
+- scrollUntilVisible:
+    element:
+      text: "Retirement"
+- assertVisible: "Retirement"
+
+- scrollUntilVisible:
+    element:
+      text: "Studying and training"
+- assertVisible: "Studying and training"
+
+- scrollUntilVisible:
+    element:
+      text: "Travel abroad"
+- assertVisible: "Travel abroad"
