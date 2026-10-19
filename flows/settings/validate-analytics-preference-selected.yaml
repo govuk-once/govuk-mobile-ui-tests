@@ -1,0 +1,7 @@
+appId: ${APP_ID}
+---
+
+- assertVisible: "Settings"
+- tapOn: "Settings"
+
+- runFlow: ../device-specific/share-app-usage-toggle-checked.yaml

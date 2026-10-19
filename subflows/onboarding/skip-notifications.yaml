@@ -1,6 +1,0 @@
-appId: ${APP_ID}
-
----
-
-- assertVisible: "Allow notifications?"
-- tapOn: "Not now"

@@ -1,0 +1,26 @@
+appId: ${APP_ID}
+tags:
+  - end-to-end
+
+---
+
+- launchApp:
+    clearState: true
+
+- runFlow: auth/sign-in.yaml
+
+- runFlow: onboarding/accept-terms.yaml
+
+- runFlow: onboarding/accept-statistics-sharing.yaml
+
+- runFlow: topics/select-initial-topics.yaml
+
+- runFlow: onboarding/skip-notifications.yaml
+
+- stopApp
+
+- launchApp
+
+- runFlow: topics/validate-initial-topics.yaml
+
+- runFlow: settings/validate-analytics-preference-selected.yaml

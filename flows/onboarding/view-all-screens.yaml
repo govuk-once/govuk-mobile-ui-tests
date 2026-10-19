@@ -1,0 +1,11 @@
+appId: ${APP_ID}
+---
+
+- assertVisible: "Get things done on the go"
+- tapOn: "Continue"
+
+- assertVisible: "Quickly get back to previous pages"
+- tapOn: "Continue"
+
+- assertVisible: "Tailored to you"
+- tapOn: "Done"

@@ -1,6 +1,0 @@
-appId: ${APP_ID}
-
----
-
-- assertVisible: "Terms and conditions"
-- tapOn: "Accept and continue"

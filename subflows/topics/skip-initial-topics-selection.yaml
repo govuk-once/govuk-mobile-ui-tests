@@ -1,8 +1,0 @@
-appId: ${APP_ID}
-
----
-
-- assertVisible: "Select relevant topics"
-
-- assertVisible: "Skip"
-- tapOn: "Skip"
