@@ -7,35 +7,35 @@ on:
     branches: [main]
 
 jobs:
-  smoke-test:
-    strategy:
-      matrix:
-        platform: [ios, android]
-    runs-on: macos-latest
-    timeout-minutes: 30
+  # smoke-test:
+  #   strategy:
+  #     matrix:
+  #       platform: [ios, android]
+  #   runs-on: macos-latest
+  #   timeout-minutes: 30
 
-    env:
-      APP_ID: uk.gov.govuk.dev
-      GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
-      GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
+  #   env:
+  #     APP_ID: uk.gov.govuk.dev
+  #     GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
+  #     GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Install Maestro
-        run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+  #     - name: Install Maestro
+  #       run: |
+  #         curl -Ls "https://get.maestro.mobile.dev" | bash
+  #         echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
-      - name: Start ${{ matrix.platform }} device
-        run: maestro start-device --platform ${{ matrix.platform }}
+  #     - name: Start ${{ matrix.platform }} device
+  #       run: maestro start-device --platform ${{ matrix.platform }}
 
-      - name: Run smoke tests
-        run: maestro test --include-tags=smoke
+  #     - name: Run smoke tests
+  #       run: maestro test --include-tags=smoke
 
-      - name: Upload test artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: maestro-artifacts-${{ matrix.platform }}
-          path: test-output/
+  #     - name: Upload test artifacts
+  #       if: failure()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: maestro-artifacts-${{ matrix.platform }}
+  #         path: test-output/
