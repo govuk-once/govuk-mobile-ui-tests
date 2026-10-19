@@ -1,96 +1,149 @@
-# User Interaction Tests
+# GOV.UK Mobile UI Tests
 
-We're looking at [Maestro](https://maestro.mobile.dev/) for our end-to-end, integration and other 'user interaction' tests. We want:
+Automated end-to-end tests for the GOV.UK mobile app using [Maestro](https://maestro.mobile.dev/), targeting both iOS and Android from a single test suite. Includes API-level schema validation via a Maven/Java module.
 
-- to create tests once that can then be run on iOS and Android.
-- to keep all all of these tests in a single repository.
-- there to be no 'hooks' into the app codebase.
-- to add the tests as part of an individual developer's workflow and/or as part of our existing Continious Integration (CI) system.
-- to be able to flexibly combine tests for specific purposes and needs.
+## Project Structure
 
-Instructions for installing Maestro can be found [here](https://maestro.mobile.dev/getting-started/installing-maestro).
-
-## Getting started
-
-### Java
-
-To use Maestro, you'll need a Java JDK installed.
-
-For Android, if you're using Android Studio - it is most likely already installed.
-
-For iOS, Xcode does not install or require Java. However, Mac OS X comes with the Java runtime already installed, but you will also require the JDK, use these commands to check...
-
-```shell
-java -version   # runtime
-javac -version  # JDK
+```
+├── flows/                          Maestro test flows
+│   ├── onboarding-select-topics.yaml   Top-level test (has launchApp:)
+│   ├── onboarding-skip-topics.yaml
+│   ├── returning-user-can-edit-topics.yaml
+│   ├── returning-user-selected-topics-and-analytics-pref-persisted.yaml
+│   ├── auth/                       Sign-in flow
+│   ├── onboarding/                 Onboarding steps (accept terms, etc.)
+│   ├── topics/                     Topic selection/validation steps
+│   ├── settings/                   Settings validation steps
+│   ├── device-specific/            Platform-specific implementations
+│   │   ├── Android/
+│   │   └── iOS/
+│   └── e2e/                        End-to-end flows combining API + UI
+│
+├── api-tests/                      Maven/Java API tests (schema validation)
+│   └── src/
+│       ├── main/java/              API client and models
+│       └── test/java/              JUnit 5 test classes
+│
+├── .github/workflows/              CI pipelines (smoke + regression)
+├── config.yaml                     Maestro workspace config
+├── run-e2e.sh                      Full e2e pipeline script (API + UI)
+└── .env example                    Environment variable template
 ```
 
-If the JDK (`javac`) is not installed, or is not working correctly - the JDK can be installed via [homebrew](https://formulae.brew.sh/formula/openjdk) or using a tool such as [asdf](https://asdf-vm.com/).
+## Prerequisites
 
-Next we need to build the app you want to test, and deploy it on a running simulator.
+- Java JDK 17+ ([Homebrew](https://formulae.brew.sh/formula/openjdk) or [ASDF](https://asdf-vm.com/))
+- [Maestro CLI](https://maestro.mobile.dev/getting-started/installing-maestro)
+- [Maven](https://maven.apache.org/) (for API tests only)
+- A running iOS simulator or Android emulator with the GOV.UK app installed
 
-### iOS
-
-You can do this entirely within Xcode in the normal way using a simulator of your choosing, or via the Xcode CLI - using the default or a custom simulator as follows...
+### iOS Setup
 
 ```shell
-# Build the debug image...
+# Build the app for the iOS simulator
 xcrun xcodebuild -scheme 'GovUK' \
--project 'GovUK.xcodeproj' \
--configuration Debug \
--sdk 'iphonesimulator' \
--destination 'generic/platform=iOS Simulator' \
--derivedDataPath \
-build
+  -project 'GovUK.xcodeproj' \
+  -configuration Debug \
+  -sdk 'iphonesimulator' \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath \
+  build
 
-# Using maestro iOS default...
+# Start an iOS simulator via Maestro
 maestro start-device --platform ios
 ```
 
-### Android
-
-As with iOS, you can do this entirely within Android Studio in the normal way using a simulator of your choosing, or via the command line - using the default or a custom simulator as follows...
+### Android Setup
 
 ```shell
-# Build the debug image...
+# Build the debug APK
 ./gradlew assembleDebug
 
-# Start maestro android default...
+# Start an Android emulator via Maestro and install the app
 maestro start-device --platform android
-
-# Install the debug image on the simulator...
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Running the tests
+## Environment Variables
 
-Now that you have a running simulator that has your app installed on it, you can run the tests.
-
-Note that we are passing in an environment variable below as the `appId` that is required by Maestro to identify the app to start. This differs between the iOS and Android implementation of the GOV.UK app.
+Copy the template and fill in your credentials:
 
 ```shell
-cd /dir/where/your/tests/are
-
-maestro test filename.yaml
+cp ".env example" .env
 ```
 
-You can also run tests by tag(s). For example:
+Maestro auto-loads `.env` from the working directory. Do **not** commit `.env` — it is in `.gitignore`.
+
+| Variable | Description |
+|----------|-------------|
+| `APP_ID` | App bundle ID (default: `uk.gov.govuk.dev`, also set in `config.yaml`) |
+| `GOVUK_EMAIL` | Test account email for the sign-in flow |
+| `GOVUK_PASSWORD` | Test account password |
+| `BASE_URL` | Backend API base URL (for API tests, default: `https://mobile.api.gov.uk`) |
+
+## Running Tests
+
+### Maestro UI Tests
 
 ```shell
-maestro test --include-tags=<tag-name>(,tag-name) flows
+# Run all tests (uses config.yaml for flow discovery)
+maestro test
+
+# Run tests filtered by tag
+maestro test --include-tags=end-to-end
+
+# Run a specific test flow
+maestro test flows/onboarding-select-topics.yaml
+
+# Pass credentials inline instead of using .env
+maestro test --env GOVUK_EMAIL=you@example.com --env GOVUK_PASSWORD=secret
+
+# Continuous mode — re-runs on file changes (useful during development)
+maestro test -c flows/onboarding-select-topics.yaml
 ```
 
-## Other useful Maestro commands
-
-Maestro comes with some very useful tools to help you debug, identify issues and generally assist with test creation and maintenance.
+### API Tests
 
 ```shell
-# A GUI that visualises what Maestro can, and can not, access within your app...
-maestro studio
+cd api-tests
+mvn test
+```
 
-# Prints out a JSON formatted listing of your apps structure. Also, useful in identifying why Maestro maybe unable to find specific elements within your app...
-maestro hierarchy
+### Full End-to-End Pipeline (API + UI)
 
-# Continuous mode, useful for interactively creating a test...
-maestro test -c filename.yaml
+The `run-e2e.sh` script validates topics against the API schema, then runs the Maestro UI flow to verify the app matches:
+
+```shell
+./run-e2e.sh
+```
+
+This runs in two steps:
+1. **API schema validation** — Maven tests fetch topics from the backend and export the expected list
+2. **Maestro UI verification** — a Maestro flow asserts the app displays the same topics
+
+## Tagging Convention
+
+| Tag | Purpose |
+|-----|---------|
+| `end-to-end` | Multi-step user journeys |
+| `e2e` | Cross-layer tests (API + UI) |
+
+## CI Pipelines
+
+| Workflow | Trigger | What it runs |
+|----------|---------|--------------|
+| **Smoke Tests** | Push/PR to `main` | Tagged `smoke` flows (currently being set up) |
+| **Regression Tests** | Daily at 06:00 UTC + manual | Tagged `regression` flows on both iOS and Android |
+
+## Conventions
+
+- **App ID:** Always use `appId: ${APP_ID}` — the value is set centrally in `config.yaml`'s `env` block, not in individual flow files.
+- **Platform handling:** Small differences use inline `when: platform:` conditionals. Larger divergences get separate files under `flows/device-specific/Android/` and `flows/device-specific/iOS/`.
+
+## Useful Maestro Commands
+
+```shell
+maestro studio          # GUI to inspect the app's element hierarchy
+maestro hierarchy       # JSON dump of the app element tree
+maestro test -c file    # Continuous mode — re-runs on file save
 ```

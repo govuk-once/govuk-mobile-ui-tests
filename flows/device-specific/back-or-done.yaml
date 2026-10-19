@@ -1,7 +1,4 @@
 appId: ${APP_ID}
-env:
-  APP_ID: uk.gov.govuk.dev
-
 ---
 
 - runFlow:
