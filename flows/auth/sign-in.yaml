@@ -22,3 +22,19 @@ appId: uk.gov.govuk.dev
 - tapOn: "Enter your password"
 - inputText: ${GOVUK_PASSWORD}
 - tapOn: "Continue"
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - pressKey: "Back"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- tapOn:
+    text: "Enter the 6 digit security code shown in your authenticator app"
+    waitToSettleTimeoutMs: 10000
+
+- inputText: ${GOVUK_TOTP_CODE}
+- tapOn: "Continue"
