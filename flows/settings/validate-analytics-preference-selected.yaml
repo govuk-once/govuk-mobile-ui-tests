@@ -1,6 +1,5 @@
 appId: ${APP_ID}
 ---
-
 - assertVisible: "Settings"
 - tapOn: "Settings"
 
