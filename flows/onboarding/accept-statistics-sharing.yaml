@@ -1,4 +1,5 @@
-appId: ${APP_ID}
+appId: uk.gov.govuk.dev
+
 ---
 
 - assertVisible: "Share statistics"
