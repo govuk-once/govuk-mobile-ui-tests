@@ -10,7 +10,7 @@ Automated end-to-end tests for the GOV.UK mobile app using [Maestro](https://mae
 │   ├── onboarding-skip-topics.yaml
 │   ├── returning-user-can-edit-topics.yaml
 │   ├── returning-user-selected-topics-and-analytics-pref-persisted.yaml
-│   ├── auth/                       Sign-in flow
+│   ├── auth/                       Sign-in flow (email, password + 2FA)
 │   ├── onboarding/                 Onboarding steps (accept terms, etc.)
 │   ├── topics/                     Topic selection/validation steps
 │   ├── settings/                   Settings validation steps
@@ -19,6 +19,9 @@ Automated end-to-end tests for the GOV.UK mobile app using [Maestro](https://mae
 │   │   └── iOS/
 │   └── e2e/                        End-to-end flows combining API + UI
 │
+├── scripts/                        Helper scripts for test automation
+│   └── generate-totp.js            TOTP code generator (unused — see run-tests.sh)
+│
 ├── api-tests/                      Maven/Java API tests (schema validation)
 │   └── src/
 │       ├── main/java/              API client and models
@@ -26,12 +29,14 @@ Automated end-to-end tests for the GOV.UK mobile app using [Maestro](https://mae
 │
 ├── .github/workflows/              CI pipelines (smoke + regression)
 ├── config.yaml                     Maestro workspace config
+├── run-tests.sh                    Test runner (loads .env + generates TOTP code)
 ├── run-e2e.sh                      Full e2e pipeline script (API + UI)
-└── .env example                    Environment variable template
+└── .env.example                    Environment variable template
 ```
 
 ## Prerequisites
 
+- Python 3 (for TOTP code generation — pre-installed on macOS)
 - Java JDK 17+ ([Homebrew](https://formulae.brew.sh/formula/openjdk) or [ASDF](https://asdf-vm.com/))
 - [Maestro CLI](https://maestro.mobile.dev/getting-started/installing-maestro)
 - [Maven](https://maven.apache.org/) (for API tests only)
@@ -64,43 +69,73 @@ maestro start-device --platform android
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Environment Variables
+## Environment Setup
 
-Copy the template and fill in your credentials:
+### 1. Create a GOV.UK One Login test account
+
+Create a test account on the GOV.UK staging environment:
+
+1. Install the dev build of the app (`uk.gov.govuk.dev`) on your emulator/simulator
+2. Launch the app and go through the sign-in flow
+3. Choose **"Create a GOV.UK One Login"**
+4. Enter your test email address and a password
+5. When asked to set up 2FA, choose **"Authenticator app"**
+6. On the QR code screen, tap **"I cannot scan the QR code"** to reveal the secret key
+7. Copy the secret key (remove any spaces) — you'll need this for your `.env` file
+8. You now need a 6-digit code to complete the setup. Generate one by running:
+   ```shell
+   ./scripts/generate-totp-code.sh YOUR_SECRET_KEY
+   ```
+   Replace `YOUR_SECRET_KEY` with the secret from step 7 (no spaces). The code refreshes every 30 seconds, so enter it promptly.
+
+### 2. Configure environment variables
 
 ```shell
-cp ".env example" .env
+cp .env.example .env
 ```
 
-Maestro auto-loads `.env` from the working directory. Do **not** commit `.env` — it is in `.gitignore`.
+Edit `.env` with your test account credentials:
+
+```
+GOVUK_EMAIL=your-email@example.com
+GOVUK_PASSWORD=your-password
+GOVUK_TOTP_SECRET=YOURSECRETKEYHERE
+```
+
+Do **not** commit `.env` — it is in `.gitignore`.
 
 | Variable | Description |
 |----------|-------------|
-| `APP_ID` | App bundle ID (default: `uk.gov.govuk.dev`, also set in `config.yaml`) |
 | `GOVUK_EMAIL` | Test account email for the sign-in flow |
 | `GOVUK_PASSWORD` | Test account password |
+| `GOVUK_TOTP_SECRET` | TOTP secret key from authenticator app setup (spaces removed) |
 | `BASE_URL` | Backend API base URL (for API tests, default: `https://mobile.api.gov.uk`) |
+
+### How 2FA automation works
+
+The GOV.UK app requires two-factor authentication via an authenticator app on every sign-in. Instead of using a phone or authenticator app, the `run-tests.sh` wrapper script generates a fresh 6-digit TOTP code from the secret key using Python before each test run. This code is passed to Maestro as an environment variable (`GOVUK_TOTP_CODE`) and entered automatically during the sign-in flow.
+
+This uses the same TOTP algorithm (RFC 6238) as any authenticator app — no external services or paid tools required.
 
 ## Running Tests
 
-### Maestro UI Tests
+Always use the wrapper script to run tests — it loads `.env` and generates the TOTP code:
 
 ```shell
-# Run all tests (uses config.yaml for flow discovery)
-maestro test
+# Run a specific test flow
+./run-tests.sh flows/onboarding-select-topics.yaml
+
+# Run all tests
+./run-tests.sh config.yaml
 
 # Run tests filtered by tag
-maestro test --include-tags=end-to-end
-
-# Run a specific test flow
-maestro test flows/onboarding-select-topics.yaml
-
-# Pass credentials inline instead of using .env
-maestro test --env GOVUK_EMAIL=you@example.com --env GOVUK_PASSWORD=secret
+./run-tests.sh --include-tags=end-to-end config.yaml
 
 # Continuous mode — re-runs on file changes (useful during development)
-maestro test -c flows/onboarding-select-topics.yaml
+./run-tests.sh -c flows/onboarding-select-topics.yaml
 ```
+
+> **Note:** Running `maestro test` directly will not work because Maestro does not auto-load `.env` files. The wrapper script is required to inject credentials and the TOTP code.
 
 ### API Tests
 
@@ -137,7 +172,7 @@ This runs in two steps:
 
 ## Conventions
 
-- **App ID:** Always use `appId: ${APP_ID}` — the value is set centrally in `config.yaml`'s `env` block, not in individual flow files.
+- **App ID:** `uk.gov.govuk.dev` is hardcoded in each flow file's `appId` field so flows are self-contained.
 - **Platform handling:** Small differences use inline `when: platform:` conditionals. Larger divergences get separate files under `flows/device-specific/Android/` and `flows/device-specific/iOS/`.
 
 ## Useful Maestro Commands
