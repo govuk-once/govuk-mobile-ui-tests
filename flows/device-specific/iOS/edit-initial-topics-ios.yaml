@@ -1,80 +1,68 @@
 appId: uk.gov.govuk.dev
-
 ---
 
 - scrollUntilVisible:
-    element:
-      text: "Benefits"
-- tapOn:
-    text: "1"
-    index: 0
+      element:
+          text: "Benefits.*"
+      centerElement: true
+- tapOn: "Benefits.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Business"
-- tapOn:
-    text: "0"
-    index: 1
+      element:
+          text: "Business.*"
+      centerElement: true
+- tapOn: "Business.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Care"
-- tapOn:
-    text: "0"
-    index: 1
+      element:
+          text: "Care.*"
+      centerElement: true
+- tapOn: "Care.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Driving and transport"
-- tapOn:
-    text: "1"
-    index: 2
+      element:
+          text: "Driving and transport.*"
+      centerElement: true
+- tapOn: "Driving and transport.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Employment"
-- tapOn:
-    text: "0"
-    index: 2
+      element:
+          text: "Employment.*"
+      centerElement: true
+- tapOn: "Employment.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Health and disability"
-- tapOn:
-    text: "0"
-    index: 2
+      element:
+          text: "Health and disability.*"
+      centerElement: true
+- tapOn: "Health and disability.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Money and tax"
-- tapOn:
-    text: "1"
-    index: 4
+      element:
+          text: "Money and tax"
+      centerElement: true
+- tapOn: "Money and tax.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Parenting and guardianship"
-- tapOn:
-    text: "0"
-    index: 3
+      element:
+          text: "Parenting and guardianship.*"
+      centerElement: true
+- tapOn: "Parenting and guardianship.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Retirement"
-- tapOn:
-    text: "0"
-    index: 3
+      element:
+          text: "Retirement.*"
+      centerElement: true
+- tapOn: "Retirement.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Studying and training"
-- tapOn:
-    text: "0"
-    index: 3
+      element:
+          text: "Studying and training.*"
+      centerElement: true
+- tapOn: "Studying and training.*"
 
 - scrollUntilVisible:
-    element:
-      text: "Travel abroad"
-- tapOn:
-    text: "1"
-    index: 7
+      element:
+          text: "Travel abroad.*"
+      centerElement: true
+- tapOn: "Travel abroad.*"

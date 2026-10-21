@@ -2,5 +2,14 @@ appId: uk.gov.govuk.dev
 
 ---
 
-- assertVisible: "Share statistics"
-- tapOn: "Share statistics"
+# The app only asks new users. For an account that has signed in to the app
+# before, it restores the previous choice and skips this screen.
+- extendedWaitUntil:
+    visible: "Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+    timeout: 20000
+
+- runFlow:
+    when:
+      visible: "Share statistics"
+    commands:
+      - tapOn: "Share statistics"

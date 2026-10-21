@@ -1,9 +1,9 @@
 appId: uk.gov.govuk.dev
 
 ---
-
-- assertVisible: "Edit"
-- tapOn: "Edit"
+# iOS exposes the button as "Edit your topics" to accessibility tools
+- assertVisible: "Edit|Edit your topics"
+- tapOn: "Edit|Edit your topics"
 
 - runFlow:
     when:

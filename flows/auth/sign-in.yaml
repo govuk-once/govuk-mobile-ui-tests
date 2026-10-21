@@ -13,13 +13,32 @@ appId: uk.gov.govuk.dev
       - tapOn: "Advanced"
       - tapOn: "Proceed to govukapp-staging.auth.eu-west-2.amazoncognito.com (unsafe)"
 
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Show Details"
+          optional: true
+          waitToSettleTimeoutMs: 5000
+      - tapOn:
+          text: "visit this website"
+          optional: true
+      - tapOn:
+          text: "Visit Website"
+          optional: true
+
 - tapOn: "Sign in"
 
-- tapOn: "Enter your email address to sign in to your GOV.UK One Login"
+- tapOn:
+    text: "Enter your email address to sign in to your GOV.UK One Login"
+    waitToSettleTimeoutMs: 10000
 - inputText: ${GOVUK_EMAIL}
 - tapOn: "Continue"
 
-- tapOn: "Enter your password"
+- tapOn:
+    text: "Enter your password"
+    waitToSettleTimeoutMs: 10000
 - inputText: ${GOVUK_PASSWORD}
 - tapOn: "Continue"
 
@@ -35,6 +54,17 @@ appId: uk.gov.govuk.dev
 - tapOn:
     text: "Enter the 6 digit security code shown in your authenticator app"
     waitToSettleTimeoutMs: 10000
-
 - inputText: ${GOVUK_TOTP_CODE}
 - tapOn: "Continue"
+
+# One Login may offer to set up a passkey after sign-in. Wait for either that
+# page or the next app screen, then skip the passkey if it was offered.
+- extendedWaitUntil:
+    visible: "Sign in faster with your face.*|Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+    timeout: 30000
+
+- runFlow:
+    when:
+      visible: "Sign in faster with your face.*"
+    commands:
+      - tapOn: "Skip for now"
