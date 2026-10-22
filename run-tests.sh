@@ -1,4 +1,9 @@
 #!/bin/bash
+# Runs Maestro with credentials from .env.
+# Usage: ./run-tests.sh [maestro test args...]
+#   ./run-tests.sh --include-tags=end-to-end flows/
+#   ./run-tests.sh flows/onboarding-select-topics.yaml
+#   ./run-tests.sh --device emulator-5554 flows/onboarding-select-topics.yaml
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -15,28 +20,40 @@ else
   exit 1
 fi
 
-# Generate TOTP code from the secret
-GOVUK_TOTP_CODE=""
-if [ -n "${GOVUK_TOTP_SECRET:-}" ]; then
-  GOVUK_TOTP_CODE=$(python3 -c "
-import hmac, hashlib, struct, time, base64
-secret = '${GOVUK_TOTP_SECRET}'
-key = base64.b32decode(secret)
-counter = int(time.time()) // 30
-msg = struct.pack('>Q', counter)
-h = hmac.new(key, msg, hashlib.sha1).digest()
-offset = h[-1] & 0x0F
-code = (struct.unpack('>I', h[offset:offset+4])[0] & 0x7FFFFFFF) % 1000000
-print(f'{code:06d}')
-")
-  echo "Generated TOTP code: $GOVUK_TOTP_CODE"
-else
-  echo "Warning: GOVUK_TOTP_SECRET not set in .env — OTP step will fail"
+if [ -z "${GOVUK_TOTP_SECRET:-}" ]; then
+  echo "Warning: GOVUK_TOTP_SECRET not set in .env — security code step will fail"
 fi
 
-# Pass all credentials to Maestro via -e flags
+# Pick a device unless one was passed. Without this Maestro picks whichever
+# device it finds first, which may be an emulator without the app installed.
+# Defaults to the iPhone 18 Pro simulator; override with DEVICE_ID or
+# DEVICE_NAME in .env, or pass --device.
+DEVICE_ARGS=()
+if [[ " $* " != *" --device "* && " $* " != *" --device="* ]]; then
+  DEVICE="${DEVICE_ID:-}"
+  if [ -z "$DEVICE" ] && command -v xcrun >/dev/null; then
+    DEVICE_NAME="${DEVICE_NAME:-iPhone 18 Pro}"
+    DEVICE=$(xcrun simctl list devices available | grep -F "    $DEVICE_NAME (" | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1 || true)
+    if [ -z "$DEVICE" ]; then
+      echo "Error: no simulator named '$DEVICE_NAME' found"
+      exit 1
+    fi
+    # Boot it if needed (no-op error if already booted)
+    xcrun simctl boot "$DEVICE" 2>/dev/null || true
+    xcrun simctl bootstatus "$DEVICE" -b >/dev/null
+  fi
+  if [ -n "$DEVICE" ]; then
+    echo "Using device: $DEVICE"
+    DEVICE_ARGS=(--device "$DEVICE")
+  fi
+fi
+
+# Pass credentials to Maestro via -e flags.
+# TOTP code is generated inline by flows/auth/sign-in.yaml (runScript)
+# so it is fresh when typed — not stale from script start.
 ~/.maestro/bin/maestro test \
+  ${DEVICE_ARGS[@]+"${DEVICE_ARGS[@]}"} \
   -e GOVUK_EMAIL="$GOVUK_EMAIL" \
   -e GOVUK_PASSWORD="$GOVUK_PASSWORD" \
-  -e GOVUK_TOTP_CODE="$GOVUK_TOTP_CODE" \
+  -e GOVUK_TOTP_SECRET="${GOVUK_TOTP_SECRET:-}" \
   "$@"

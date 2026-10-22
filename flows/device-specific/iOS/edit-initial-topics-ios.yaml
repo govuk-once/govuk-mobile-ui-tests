@@ -39,7 +39,7 @@ appId: uk.gov.govuk.dev
 
 - scrollUntilVisible:
       element:
-          text: "Money and tax"
+          text: "Money and tax.*"
       centerElement: true
 - tapOn: "Money and tax.*"
 

@@ -1,7 +1,5 @@
 appId: uk.gov.govuk.dev
-
 ---
-
 - tapOn:
     text: "Accept and continue"
     waitToSettleTimeoutMs: 30000
@@ -10,25 +8,41 @@ appId: uk.gov.govuk.dev
     when:
       platform: Android
     commands:
-      - tapOn: "Advanced"
-      - tapOn: "Proceed to govukapp-staging.auth.eu-west-2.amazoncognito.com (unsafe)"
+    - tapOn: "Advanced"
+    - tapOn: "Proceed to govukapp-staging.auth.eu-west-2.amazoncognito.com (unsafe)"
 
 - runFlow:
     when:
       platform: iOS
     commands:
-      - tapOn:
-          text: "Show Details"
-          optional: true
-          waitToSettleTimeoutMs: 5000
-      - tapOn:
-          text: "visit this website"
-          optional: true
-      - tapOn:
-          text: "Visit Website"
-          optional: true
+    - tapOn:
+        text: "Show Details"
+        optional: true
+        waitToSettleTimeoutMs: 5000
+    - tapOn:
+        text: "visit this website"
+        optional: true
+    - tapOn:
+        text: "Visit Website"
+        optional: true
 
 - tapOn: "Sign in"
+
+# The One Login landing page can load after the tap above, leaving its own
+# "Sign in" button untapped. Keep tapping it until the email field appears.
+- repeat:
+    while:
+      notVisible: "Enter your email address to sign in to your GOV.UK One Login"
+    times: 5
+    commands:
+    # The page heading is not readable as text, so detect it by its button
+    - runFlow:
+        when:
+          visible: "Create your GOV.UK One Login"
+        commands:
+        - tapOn: "Sign in"
+    - waitForAnimationToEnd:
+        timeout: 3000
 
 - tapOn:
     text: "Enter your email address to sign in to your GOV.UK One Login"
@@ -46,15 +60,35 @@ appId: uk.gov.govuk.dev
     when:
       platform: Android
     commands:
-      - pressKey: "Back"
+    - pressKey: "Back"
 
 - waitForAnimationToEnd:
     timeout: 5000
 
+# iOS may offer to save the password (e.g. on a fresh simulator). Wait for that
+# dialog or the security code page, and dismiss the dialog if it appeared.
+- extendedWaitUntil:
+    visible: "Save Password\\?|Enter the 6 digit security code shown in your authenticator app"
+    timeout: 20000
+
+- runFlow:
+    when:
+      visible: "Save Password\\?"
+    commands:
+    - tapOn: "Not Now"
+
+- extendedWaitUntil:
+    visible: "Enter the 6 digit security code shown in your authenticator app"
+    timeout: 20000
+
 - tapOn:
     text: "Enter the 6 digit security code shown in your authenticator app"
-    waitToSettleTimeoutMs: 10000
-- inputText: ${GOVUK_TOTP_CODE}
+    waitToSettleTimeoutMs: 5000
+- runScript:
+    file: ../../scripts/generate-totp.js
+    env:
+      GOVUK_TOTP_SECRET: ${GOVUK_TOTP_SECRET}
+- inputText: ${output.totp}
 - tapOn: "Continue"
 
 # One Login may offer to set up a passkey after sign-in. Wait for either that
@@ -67,4 +101,4 @@ appId: uk.gov.govuk.dev
     when:
       visible: "Sign in faster with your face.*"
     commands:
-      - tapOn: "Skip for now"
+    - tapOn: "Skip for now"
