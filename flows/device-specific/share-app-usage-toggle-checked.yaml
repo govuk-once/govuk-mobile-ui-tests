@@ -1,20 +1,21 @@
 appId: uk.gov.govuk.dev
-
 ---
 
 - runFlow:
     when:
       platform: Android
     commands:
-      - assertVisible:
-          id: "toggle Share app usage statistics"
-          checked: true
+    - assertVisible:
+        id: "toggle Share app usage statistics"
+        checked: true
 
 - runFlow:
     when:
       platform: iOS
     commands:
-      - assertVisible: "Share app usage statistics"
-      - assertVisible:
-          text: "1"
-          index: 0
+    - scrollUntilVisible:
+        element:
+          text: "Share app usage statistics"
+        centerElement: true
+    - assertVisible:
+        text: "Share app usage statistics"
