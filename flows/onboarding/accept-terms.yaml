@@ -2,5 +2,14 @@ appId: uk.gov.govuk.dev
 
 ---
 
-- assertVisible: "Terms and conditions"
-- tapOn: "Accept and continue"
+# The terms screen is not always shown (e.g. if this account already accepted
+# them), so wait for it or any later onboarding screen, then accept if shown.
+- extendedWaitUntil:
+    visible: "Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+    timeout: 20000
+
+- runFlow:
+    when:
+      visible: "Terms and conditions"
+    commands:
+      - tapOn: "Accept and continue"

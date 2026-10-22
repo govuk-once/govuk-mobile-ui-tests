@@ -1,0 +1,26 @@
+appId: uk.gov.govuk.dev
+
+---
+
+# Without Face ID set up (e.g. on a simulator) the app signs the user out
+# when it restarts, so sign in again if the welcome screen is showing.
+# The welcome heading is not readable as text, so detect its button instead.
+
+# Wait until the app has decided: welcome screen (signed out) or home (signed in)
+- extendedWaitUntil:
+    visible: "Accept and continue|Your topics"
+    timeout: 20000
+
+- runFlow:
+    when:
+      visible: "Accept and continue"
+    file: sign-in.yaml
+
+- runFlow: ../onboarding/accept-terms.yaml
+
+- runFlow: ../onboarding/accept-statistics-sharing.yaml
+
+- runFlow:
+    when:
+      visible: "Allow notifications\\?"
+    file: ../onboarding/skip-notifications.yaml

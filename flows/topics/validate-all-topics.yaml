@@ -2,6 +2,10 @@ appId: uk.gov.govuk.dev
 
 ---
 
+- tapOn:
+    text: "All topics"
+    waitToSettleTimeoutMs: 5000
+
 - scrollUntilVisible:
     element:
       text: "Benefits"

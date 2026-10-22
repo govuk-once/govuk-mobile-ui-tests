@@ -123,13 +123,13 @@ Always use the wrapper script to run tests — it loads `.env` and generates the
 
 ```shell
 # Run a specific test flow
-./run-tests.sh flows/onboarding-select-topics.yaml
+./run-tests.sh flows/onboarding-select-topics.yaml (example test)
 
 # Run all tests
-./run-tests.sh config.yaml
+./run-tests.sh flows/
 
 # Run tests filtered by tag
-./run-tests.sh --include-tags=end-to-end config.yaml
+./run-tests.sh --include-tags=end-to-end /flows
 
 # Continuous mode — re-runs on file changes (useful during development)
 ./run-tests.sh -c flows/onboarding-select-topics.yaml

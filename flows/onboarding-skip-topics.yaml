@@ -16,6 +16,6 @@ tags:
 
 - runFlow: topics/skip-initial-topics-selection.yaml
 
-- runFlow: topics/validate-all-topics.yaml
-
 - runFlow: onboarding/skip-notifications.yaml
+
+- runFlow: topics/validate-all-topics.yaml

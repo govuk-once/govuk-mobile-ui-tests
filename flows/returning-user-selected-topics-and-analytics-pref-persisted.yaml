@@ -22,6 +22,8 @@ tags:
 
 - launchApp
 
+- runFlow: auth/sign-in-if-needed.yaml
+
 - runFlow: topics/validate-initial-topics.yaml
 
 - runFlow: settings/validate-analytics-preference-selected.yaml

@@ -22,6 +22,8 @@ tags:
 
 - launchApp
 
+- runFlow: auth/sign-in-if-needed.yaml
+
 - runFlow: device-specific/edit-initial-topics.yaml
 
 - runFlow: topics/validate-edited-topics.yaml

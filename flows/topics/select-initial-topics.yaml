@@ -5,24 +5,28 @@ appId: uk.gov.govuk.dev
 - scrollUntilVisible:
     element:
       text: "Benefits.*"
+    centerElement: true  
 - assertVisible: "Benefits.*"
 - tapOn: "Benefits.*"
 
 - scrollUntilVisible:
     element:
       text: "Driving and transport.*"
+    centerElement: true
 - assertVisible: "Driving and transport.*"
 - tapOn: "Driving and transport.*"
 
 - scrollUntilVisible:
     element:
       text: "Money and tax.*"
+    centerElement: true
 - assertVisible: "Money and tax.*"
 - tapOn: "Money and tax.*"
 
 - scrollUntilVisible:
     element:
       text: "Travel abroad.*"
+    centerElement: true
 - assertVisible: "Travel abroad.*"
 - tapOn: "Travel abroad.*"
 

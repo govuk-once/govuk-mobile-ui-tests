@@ -2,5 +2,10 @@ appId: uk.gov.govuk.dev
 
 ---
 
-- assertVisible: "Allow notifications?"
-- tapOn: "Not now"
+- assertVisible:
+    text: "Allow notifications?"
+    waitToSettleTimeoutMs: 10000
+- tapOn: 
+    text: "Not now"
+    waitToSettleTimeoutMs: 5000
+    retryTapIfNoChange: true
