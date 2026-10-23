@@ -2,7 +2,6 @@ appId: uk.gov.govuk.dev
 
 tags:
   - e2e
-
 ---
 
 # Cross-layer e2e scenario:
