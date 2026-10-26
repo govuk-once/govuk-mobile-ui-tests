@@ -1,19 +1,23 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Topics API Response",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Topics list (GET /static/topics/list)",
   "type": "array",
+  "minItems": 1,
   "items": {
     "type": "object",
-    "required": ["title"],
+    "required": ["ref", "title"],
     "properties": {
+      "ref": {
+        "type": "string",
+        "minLength": 1
+      },
       "title": {
         "type": "string",
         "minLength": 1
       },
-      "ref": {
+      "description": {
         "type": "string"
       }
     }
-  },
-  "minItems": 1
+  }
 }

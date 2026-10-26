@@ -1,14 +1,17 @@
 appId: uk.gov.govuk.dev
 
 tags:
-  - e2e
+- e2e
 ---
 
-# Cross-layer e2e scenario:
-# 1. The Java API test (TopicsApiTest#exportTopicsForMaestroE2E) fetches the live
-#    topics list, validates its JSON schema, and exports EXPECTED_TOPICS to the env.
-# 2. This flow asserts the app shows every topic that the API returned.
-# Run via: ./run-e2e.sh
+# API -> UI check: every topic the API returns must appear in the app.
+# 1. Ask the API for the topics list (the same endpoint the app uses).
+# 2. Sign in, skip topic selection, and open the "All topics" tab.
+# 3. Check each topic from step 1 is shown, scrolling to find it.
+# Run via: ./run-e2e.sh  (API contract tests first, then this flow)
+
+- runScript:
+    file: ../../scripts/fetch-topics.js
 
 - launchApp:
     clearState: true
@@ -23,58 +26,33 @@ tags:
 
 - runFlow: ../onboarding/skip-notifications.yaml
 
-# Assert all topics are visible on the home screen
-- scrollUntilVisible:
-    element:
-      text: "Benefits"
-- assertVisible: "Benefits"
+# Skipped topics are listed under the "All topics" tab, not "Your topics"
+- tapOn:
+    text: "All topics"
+    waitToSettleTimeoutMs: 5000
 
-- scrollUntilVisible:
-    element:
-      text: "Business"
-- assertVisible: "Business"
-
-- scrollUntilVisible:
-    element:
-      text: "Care"
-- assertVisible: "Care"
-
-- scrollUntilVisible:
-    element:
-      text: "Driving and transport"
-- assertVisible: "Driving and transport"
-
-- scrollUntilVisible:
-    element:
-      text: "Employment"
-- assertVisible: "Employment"
-
-- scrollUntilVisible:
-    element:
-      text: "Health and disability"
-- assertVisible: "Health and disability"
-
-- scrollUntilVisible:
-    element:
-      text: "Money and tax"
-- assertVisible: "Money and tax"
-
-- scrollUntilVisible:
-    element:
-      text: "Parenting and guardianship"
-- assertVisible: "Parenting and guardianship"
-
-- scrollUntilVisible:
-    element:
-      text: "Retirement"
-- assertVisible: "Retirement"
-
-- scrollUntilVisible:
-    element:
-      text: "Studying and training"
-- assertVisible: "Studying and training"
-
-- scrollUntilVisible:
-    element:
-      text: "Travel abroad"
-- assertVisible: "Travel abroad"
+- repeat:
+    while:
+      true: ${output.topicIndex < output.topicCount}
+    commands:
+    - runScript:
+        file: ../../scripts/next-topic.js
+    # The API order may differ from the screen order, so look below first,
+    # then above if it was not found.
+    - scrollUntilVisible:
+        element:
+          text: ${output.currentTopicPattern}
+        direction: DOWN
+        timeout: 15000
+        optional: true
+    - runFlow:
+        when:
+          notVisible: ${output.currentTopicPattern}
+        commands:
+        - scrollUntilVisible:
+            element:
+              text: ${output.currentTopicPattern}
+            direction: UP
+            timeout: 15000
+            optional: true
+    - assertVisible: ${output.currentTopicPattern}
