@@ -19,7 +19,6 @@ if (!topics || topics.length === 0) {
   throw new Error('GET ' + url + ' returned no topics');
 }
 
-
 output.topicTitles = topics.map(function (topic) { return topic.title; });
 output.topicCount = output.topicTitles.length;
 output.topicIndex = 0;
