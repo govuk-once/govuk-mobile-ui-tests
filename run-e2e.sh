@@ -11,7 +11,17 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 echo "=== Step 1: API contract tests (REST Assured) ==="
 cd "$SCRIPT_DIR/api-tests"
+set +e
 ./mvnw -q test
+API_STATUS=$?
+set -e
+# HTML report, built whether the tests passed or not
+./mvnw -q surefire-report:report-only || echo "Warning: could not build the API HTML report"
+echo "API report: api-tests/target/reports/surefire.html"
+if [ "$API_STATUS" -ne 0 ]; then
+  echo "API contract tests failed, so the API-to-UI check was not run."
+  exit "$API_STATUS"
+fi
 
 echo ""
 echo "=== Step 2: API-to-UI check (Maestro) ==="

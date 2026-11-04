@@ -7,7 +7,10 @@
 #
 # Failed tests are rerun once and reported as flaky if they then pass.
 # Turn this off with RETRY=0 (in .env or before the command).
-# JUnit reports are written to test-output/.
+# Reports go to test-output/: report.html (open in a browser), JUnit XML
+# (report.xml) plus, in debug/<test>/,
+# a screenshot of the failed step, a step-by-step log (commands.json) and logs.
+# Each run replaces the previous run's test-output/.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -73,15 +76,85 @@ fi
 REPORT_DIR="$SCRIPT_DIR/test-output"
 REPORT="$REPORT_DIR/report.xml"
 RETRY_REPORT="$REPORT_DIR/report-retry.xml"
+DEBUG_DIR="$REPORT_DIR/debug"
+RETRY_DEBUG_DIR="$REPORT_DIR/debug-retry"
 mkdir -p "$REPORT_DIR"
-rm -f "$REPORT" "$RETRY_REPORT"
+# Clear the previous run's output (only what this script writes)
+rm -rf "$REPORT" "$RETRY_REPORT" "$DEBUG_DIR" "$RETRY_DEBUG_DIR" "$REPORT_DIR/report.html"
+
+# Maestro's logs record the values passed with -e, so replace the account
+# details with **** in the text files of test-output/ (safe to share or upload).
+mask_secrets() {
+  local name
+  for name in GOVUK_PASSWORD GOVUK_TOTP_SECRET GOVUK_EMAIL; do
+    [ -n "${!name:-}" ] || continue
+    grep -rlF --include='*.log' --include='*.json' --include='*.xml' -- "${!name}" "$REPORT_DIR" 2>/dev/null \
+      | while IFS= read -r f; do SECRET="${!name}" perl -pi -e 's/\Q$ENV{SECRET}\E/****/g' "$f"; done
+  done
+  return 0
+}
+
+# Prints "<file>: <reason>" for each failed test in a JUnit report
+failure_reasons() {
+  [ -f "$1" ] || return 0
+  awk '
+    /<testcase / {
+      file = ""
+      if ($0 ~ /status="(ERROR|CANCELED|STOPPED)"/ && match($0, /file="[^"]+"/))
+        file = substr($0, RSTART + 6, RLENGTH - 7)
+    }
+    /<failure/ && file != "" {
+      msg = $0
+      sub(/.*<failure[^>]*>/, "", msg)
+      sub(/<\/failure>.*/, "", msg)
+      print file ": " msg
+      file = ""
+    }' "$1" | sed -e 's/&quot;/"/g' -e "s/&apos;/'/g" -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g'
+}
+
+# Prints each failed test, the step that failed, and its screenshot
+print_failures() {
+  local report="$1" debug_dir="$2" file name shot
+  while IFS= read -r line; do
+    file="${line%%: *}"
+    name="$(basename "$file" .yaml)"
+    echo "  $file"
+    echo "    ${line#*: }"
+    shot="$(ls "$debug_dir/$name/screenshots/"*.png 2>/dev/null | tail -1 || true)"
+    if [ -n "$shot" ]; then echo "    screenshot: ${shot#$SCRIPT_DIR/}"; fi
+  done < <(failure_reasons "$report")
+}
+
+print_reports() {
+  # HTML summary from the JUnit and step logs; a problem here never changes the test result
+  python3 "$SCRIPT_DIR/scripts/maestro-report.py" "$REPORT_DIR" \
+    || echo "Warning: could not build test-output/report.html"
+  echo ""
+  echo "Reports (test-output/):"
+  echo "  report.html              open in a browser: results, every step, failure screenshots"
+  echo "  report.xml               JUnit results"
+  echo "  debug/<test>/            screenshot of the failed step, commands.json (every step), logs/"
+  if [ -f "$RETRY_REPORT" ]; then
+    echo "  report-retry.xml         JUnit results of the rerun"
+    echo "  debug-retry/<test>/      the same for the rerun"
+  fi
+}
 
 set +e
-run_maestro --format junit --output "$REPORT" "$@"
+run_maestro --format junit --output "$REPORT" \
+  --debug-output "$DEBUG_DIR" --flatten-debug-output "$@"
 STATUS=$?
 set -e
+mask_secrets
+
+if [ "$STATUS" -ne 0 ]; then
+  echo ""
+  echo "=== Failed tests ==="
+  print_failures "$REPORT" "$DEBUG_DIR"
+fi
 
 if [ "$STATUS" -eq 0 ] || [ "${RETRY:-1}" = "0" ] || [ ! -f "$REPORT" ]; then
+  print_reports
   exit "$STATUS"
 fi
 
@@ -94,6 +167,7 @@ done < <(grep -E '<testcase .*status="(ERROR|CANCELED|STOPPED)"' "$REPORT" \
 
 # Nothing to rerun (e.g. Maestro stopped before any test ran)
 if [ ${#FAILED[@]} -eq 0 ]; then
+  print_reports
   exit "$STATUS"
 fi
 
@@ -118,9 +192,11 @@ echo ""
 
 set +e
 run_maestro --format junit --output "$RETRY_REPORT" \
+  --debug-output "$RETRY_DEBUG_DIR" --flatten-debug-output \
   ${OPTIONS[@]+"${OPTIONS[@]}"} "${FAILED[@]}"
 RETRY_STATUS=$?
 set -e
+mask_secrets
 
 echo ""
 echo "=== Retry summary ==="
@@ -131,6 +207,12 @@ for file in "${FAILED[@]}"; do
     echo "  FAILED  $file (failed twice)"
   fi
 done
-echo "Reports: test-output/report.xml, test-output/report-retry.xml"
+
+if [ "$RETRY_STATUS" -ne 0 ]; then
+  echo ""
+  echo "=== Still failing after the rerun ==="
+  print_failures "$RETRY_REPORT" "$RETRY_DEBUG_DIR"
+fi
+print_reports
 
 exit "$RETRY_STATUS"
