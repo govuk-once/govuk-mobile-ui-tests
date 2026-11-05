@@ -5,9 +5,7 @@ appId: uk.gov.govuk.dev
     when:
       platform: Android
     commands:
-    - assertVisible:
-        id: "toggle Share app usage statistics"
-        checked: true
+    - assertVisible: "Share app usage statistics, On"
 
 - runFlow:
     when:

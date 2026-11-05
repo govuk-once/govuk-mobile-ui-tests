@@ -1,5 +1,8 @@
 appId: uk.gov.govuk.dev
 ---
+- extendedWaitUntil:
+    visible: "Accept and continue"
+    timeout: 60000
 - tapOn:
     text: "Accept and continue"
     waitToSettleTimeoutMs: 30000
@@ -95,7 +98,7 @@ appId: uk.gov.govuk.dev
 # page or the next app screen, then skip the passkey if it was offered.
 - extendedWaitUntil:
     visible: "Sign in faster with your face.*|Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
-    timeout: 30000
+    timeout: 120000
 
 - runFlow:
     when:

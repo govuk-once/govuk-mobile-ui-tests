@@ -2,7 +2,18 @@ appId: uk.gov.govuk.dev
 
 ---
 
-- assertVisible: "Select relevant topics"
+# Android does not expose the heading in the accessibility tree
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible: "Select relevant topics"
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible: "Topics you select will be shown on the app home page so you can find them more easily"
 
 - assertVisible: "Skip"
 - tapOn: "Skip"

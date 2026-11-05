@@ -9,6 +9,7 @@ appId: uk.gov.govuk.dev
 - scrollUntilVisible:
     element:
       text: "Benefits"
+    direction: UP
 - assertVisible: "Benefits"
 
 - scrollUntilVisible:

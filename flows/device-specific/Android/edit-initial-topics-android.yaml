@@ -2,68 +2,67 @@ appId: uk.gov.govuk.dev
 
 ---
 
-- scrollUntilVisible:
-    element:
-      text: "Benefits"
-- tapOn:
-    id: "toggle Benefits"
+- extendedWaitUntil:
+    visible: "Benefits.*"
+    timeout: 10000
+- tapOn: "Benefits.*"
 
 - scrollUntilVisible:
     element:
-      text: "Business"
-- tapOn:
-    id: "toggle Business"
+      text: "Business.*"
+    centerElement: true
+- tapOn: "Business.*"
 
 - scrollUntilVisible:
     element:
-      text: "Care"
-- tapOn:
-    id: "toggle Care"
+      text: "Care.*"
+    centerElement: true
+- tapOn: "Care.*"
 
 - scrollUntilVisible:
     element:
-      text: "Driving and transport"
-- tapOn:
-    id: "toggle Driving and transport"
+      text: "Driving and transport.*"
+    centerElement: true
+- tapOn: "Driving and transport.*"
 
 - scrollUntilVisible:
     element:
-      text: "Employment"
-- tapOn:
-    id: "toggle Employment"
+      text: "Employment.*"
+    centerElement: true
+- tapOn: "Employment.*"
 
 - scrollUntilVisible:
     element:
-      text: "Health and disability"
-- tapOn:
-    id: "toggle Health and disability"
+      text: "Health and disability.*"
+    centerElement: true
+- tapOn: "Health and disability.*"
 
 - scrollUntilVisible:
     element:
-      text: "Money and tax"
-- tapOn:
-    id: "toggle Money and tax"
+      text: "Money and tax.*"
+    centerElement: true
+- tapOn: "Money and tax.*"
 
 - scrollUntilVisible:
     element:
-      text: "Parenting and guardianship"
-- tapOn:
-    id: "toggle Parenting and guardianship"
+      text: "Parenting and guardianship.*"
+    centerElement: true
+- tapOn: "Parenting and guardianship.*"
 
 - scrollUntilVisible:
     element:
-      text: "Retirement"
-- tapOn:
-    id: "toggle Retirement"
+      text: "Retirement.*"
+    centerElement: true
+- tapOn: "Retirement.*"
 
 - scrollUntilVisible:
     element:
-      text: "Studying and training"
-- tapOn:
-    id: "toggle Studying and training"
+      text: "Studying and training.*"
+    centerElement: true
+- tapOn: "Studying and training.*"
 
 - scrollUntilVisible:
     element:
-      text: "Travel abroad"
-- tapOn:
-    id: "toggle Travel abroad"
+      text: "Travel abroad.*"
+    centerElement: true
+- tapOn: "Travel abroad.*"

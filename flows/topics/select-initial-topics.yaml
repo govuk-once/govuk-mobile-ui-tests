@@ -5,7 +5,8 @@ appId: uk.gov.govuk.dev
 - scrollUntilVisible:
     element:
       text: "Benefits.*"
-    centerElement: true  
+    direction: UP
+    centerElement: true
 - assertVisible: "Benefits.*"
 - tapOn: "Benefits.*"
 
