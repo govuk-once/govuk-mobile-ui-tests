@@ -28,7 +28,25 @@ jobs:
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Start ${{ matrix.platform }} device
-        run: maestro start-device --platform ${{ matrix.platform }}
+        run: |
+          if [ "${{ matrix.platform }}" = "ios" ]; then
+            IOS_RUNTIME=$(xcrun simctl list runtimes -j | python3 -c '
+          import json, sys
+          runtimes = [
+              runtime["version"]
+              for runtime in json.load(sys.stdin)["runtimes"]
+              if runtime["isAvailable"] and runtime["name"].startswith("iOS ")
+          ]
+          if not runtimes:
+              raise SystemExit("No available iOS simulator runtime found")
+          version = max(runtimes, key=lambda value: tuple(int(part) for part in value.split(".")))
+          print("iOS-" + version.replace(".", "-"))
+          ')
+            echo "Starting iOS simulator with runtime $IOS_RUNTIME"
+            maestro start-device --platform ios --device-os "$IOS_RUNTIME"
+          else
+            maestro start-device --platform android
+          fi
 
       - name: Check sign-in secrets
         run: |
