@@ -8,6 +8,7 @@ on:
 jobs:
   regression-test:
     strategy:
+      fail-fast: false
       matrix:
         platform: [ios, android]
     runs-on: macos-latest
