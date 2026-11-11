@@ -60,7 +60,7 @@ jobs:
 
       - name: Run regression tests
         run: |
-          maestro test --include-tags=regression \
+          maestro test --include-tags=end-to-end flows/ \
             -e GOVUK_EMAIL="$GOVUK_EMAIL" \
             -e GOVUK_PASSWORD="$GOVUK_PASSWORD" \
             -e GOVUK_TOTP_SECRET="$GOVUK_TOTP_SECRET"
