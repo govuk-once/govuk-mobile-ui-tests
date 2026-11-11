@@ -17,6 +17,7 @@ jobs:
       APP_ID: uk.gov.govuk.dev
       GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
       GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
+      GOVUK_TOTP_SECRET: ${{ secrets.GOVUK_TOTP_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +30,21 @@ jobs:
       - name: Start ${{ matrix.platform }} device
         run: maestro start-device --platform ${{ matrix.platform }}
 
+      - name: Check sign-in secrets
+        run: |
+          for name in GOVUK_EMAIL GOVUK_PASSWORD GOVUK_TOTP_SECRET; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Required Actions secret $name is missing or empty"
+              exit 1
+            fi
+          done
+
       - name: Run regression tests
-        run: maestro test --include-tags=regression
+        run: |
+          maestro test --include-tags=regression \
+            -e GOVUK_EMAIL="$GOVUK_EMAIL" \
+            -e GOVUK_PASSWORD="$GOVUK_PASSWORD" \
+            -e GOVUK_TOTP_SECRET="$GOVUK_TOTP_SECRET"
 
       - name: Upload test artifacts
         if: failure()
