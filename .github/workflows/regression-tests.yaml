@@ -60,7 +60,12 @@ jobs:
 
       - name: Run regression tests
         run: |
+          mkdir -p test-output
           maestro test --include-tags=end-to-end flows/ \
+            --format junit \
+            --output test-output/report.xml \
+            --test-output-dir test-output \
+            --flatten-debug-output \
             -e GOVUK_EMAIL="$GOVUK_EMAIL" \
             -e GOVUK_PASSWORD="$GOVUK_PASSWORD" \
             -e GOVUK_TOTP_SECRET="$GOVUK_TOTP_SECRET"
