@@ -104,6 +104,7 @@ jobs:
             --format junit \
             --output test-output/report.xml \
             --test-output-dir test-output \
+            --debug-output test-output/debug \
             --flatten-debug-output \
             -e GOVUK_EMAIL="$GOVUK_EMAIL" \
             -e GOVUK_PASSWORD="$GOVUK_PASSWORD" \
