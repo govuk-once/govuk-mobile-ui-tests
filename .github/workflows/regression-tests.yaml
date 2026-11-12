@@ -83,7 +83,8 @@ jobs:
             -sdk iphonesimulator \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$DERIVED_DATA" \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGN_IDENTITY=- \
             build
           xcrun simctl install "$SIMULATOR_ID" \
             "$DERIVED_DATA/Build/Products/Debug-iphonesimulator/govuk_ios.app"
