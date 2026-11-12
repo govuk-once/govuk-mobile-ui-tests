@@ -23,6 +23,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout iOS app
+        if: matrix.platform == 'ios'
+        uses: actions/checkout@v4
+        with:
+          repository: govuk-once/govuk-mobile-ios-app
+          ref: main
+          path: ios-app
+          lfs: true
+          persist-credentials: false
+
       - name: Install Maestro
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash
@@ -48,6 +58,35 @@ jobs:
           else
             maestro start-device --platform android
           fi
+
+      - name: Build and install iOS app
+        if: matrix.platform == 'ios'
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices booted -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          booted = [
+              device["udid"]
+              for runtime_devices in devices.values()
+              for device in runtime_devices
+              if device["state"] == "Booted"
+          ]
+          if len(booted) != 1:
+              raise SystemExit(f"Expected one booted simulator, found {len(booted)}")
+          print(booted[0])
+          ')
+          DERIVED_DATA="$RUNNER_TEMP/govuk-ios-derived"
+          xcodebuild \
+            -project ios-app/GovUK.xcodeproj \
+            -scheme GovUK \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+          xcrun simctl install "$SIMULATOR_ID" \
+            "$DERIVED_DATA/Build/Products/Debug-iphonesimulator/govuk_ios.app"
 
       - name: Check sign-in secrets
         run: |
