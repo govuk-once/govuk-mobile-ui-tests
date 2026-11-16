@@ -1,40 +1,176 @@
 name: Regression Tests
 
+# Builds the GOV.UK dev app from its own repo, starts a simulator/emulator,
+# installs the app and runs the end-to-end journeys with run-tests.sh.
+#
+# Repository secrets needed (Settings > Secrets and variables > Actions):
+#   GOVUK_EMAIL, GOVUK_PASSWORD, GOVUK_TOTP_SECRET  One Login staging test account
+#   CI_ACCESS_USERNAME, CI_ACCESS_TOKEN             GitHub user + classic token with
+#                                                    read:packages (Android build only)
+
 on:
   schedule:
-    - cron: "0 6 * * *"
+  - cron: "0 6 * * *"
   workflow_dispatch:
 
-jobs:
-  regression-test:
-    strategy:
-      matrix:
-        platform: [ios, android]
-    runs-on: macos-latest
-    timeout-minutes: 60
+env:
+  MAESTRO_VERSION: 2.10.0
+  TEST_TAGS: end-to-end
 
-    env:
-      APP_ID: uk.gov.govuk.dev
-      GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
-      GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
+jobs:
+  ios:
+    name: Regression (iOS)
+    runs-on: macos-15
+    timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout tests
+      uses: actions/checkout@v4
 
-      - name: Install Maestro
-        run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+    - name: Checkout iOS app
+      uses: actions/checkout@v4
+      with:
+        repository: govuk-once/govuk-mobile-ios-app
+        path: ios-app
+        lfs: true
 
-      - name: Start ${{ matrix.platform }} device
-        run: maestro start-device --platform ${{ matrix.platform }}
+    - name: Setup Java (for Maestro)
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
 
-      - name: Run regression tests
-        run: maestro test --include-tags=regression
+    - name: Install Maestro
+      run: |
+        curl -Ls "https://get.maestro.mobile.dev" | bash
+        echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
-      - name: Upload test artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: maestro-artifacts-${{ matrix.platform }}
-          path: test-output/
+    # run-tests.sh looks for an iPhone 18 Pro by default, which the runner
+    # may not have, so use the first available iPhone and pass it with --device
+    - name: Boot iPhone simulator
+      run: |
+        UDID=$(xcrun simctl list devices available | grep -E '^    iPhone' | head -1 | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+        if [ -z "$UDID" ]; then
+          echo "No iPhone simulator found"
+          xcrun simctl list devices available
+          exit 1
+        fi
+        xcrun simctl list devices available | grep "$UDID"
+        xcrun simctl boot "$UDID"
+        xcrun simctl bootstatus "$UDID" -b
+        echo "UDID=$UDID" >> "$GITHUB_ENV"
+
+    # Debug configuration = bundle id uk.gov.govuk.dev
+    - name: Build app for the simulator
+      working-directory: ios-app
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -project GovUK.xcodeproj \
+          -scheme GovUK \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination "id=$UDID" \
+          -derivedDataPath build \
+          CODE_SIGNING_ALLOWED=NO \
+          | tail -50
+
+    - name: Install app
+      run: xcrun simctl install "$UDID" ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
+
+    - name: Create .env from secrets
+      env:
+        GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
+        GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
+        GOVUK_TOTP_SECRET: ${{ secrets.GOVUK_TOTP_SECRET }}
+      run: |
+        printf 'GOVUK_EMAIL=%q\nGOVUK_PASSWORD=%q\nGOVUK_TOTP_SECRET=%q\nRETRY=1\n' \
+          "$GOVUK_EMAIL" "$GOVUK_PASSWORD" "$GOVUK_TOTP_SECRET" > .env
+
+    - name: Run regression tests
+      run: ./run-tests.sh --device "$UDID" --include-tags="$TEST_TAGS" flows/
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: regression-report-ios
+        path: test-output/
+        if-no-files-found: ignore
+
+  android:
+    name: Regression (Android)
+    # GitHub's macOS runners are Apple Silicon without nested virtualisation,
+    # so the Android emulator runs on Linux with KVM instead
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+    - name: Checkout tests
+      uses: actions/checkout@v4
+
+    - name: Checkout Android app
+      uses: actions/checkout@v4
+      with:
+        repository: govuk-once/govuk-mobile-android-app
+        path: android-app
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    # The app's settings.gradle.kts reads these when github.properties is absent
+    - name: Build debug APK
+      working-directory: android-app
+      env:
+        CI_ACCESS_USERNAME: ${{ secrets.CI_ACCESS_USERNAME }}
+        CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
+      run: ./gradlew :app:assembleDebug --no-configuration-cache
+
+    - name: Install Maestro
+      run: |
+        curl -Ls "https://get.maestro.mobile.dev" | bash
+        echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+    - name: Create .env from secrets
+      env:
+        GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
+        GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
+        GOVUK_TOTP_SECRET: ${{ secrets.GOVUK_TOTP_SECRET }}
+      run: |
+        printf 'GOVUK_EMAIL=%q\nGOVUK_PASSWORD=%q\nGOVUK_TOTP_SECRET=%q\nRETRY=1\n' \
+          "$GOVUK_EMAIL" "$GOVUK_PASSWORD" "$GOVUK_TOTP_SECRET" > .env
+
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    # The emulator only runs while this step's script runs, so install the
+    # app, prepare Chrome and run the tests here. Each line runs on its own.
+    - name: Start emulator and run regression tests
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 34
+        arch: x86_64
+        target: google_apis
+        disable-animations: true
+        emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+        script: |
+          adb install -r android-app/app/build/outputs/apk/debug/app-debug.apk
+          ~/.maestro/bin/maestro test --device emulator-5554 flows/setup/android-chrome-first-run.yaml || true
+          ./run-tests.sh --device emulator-5554 --include-tags="$TEST_TAGS" flows/
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: regression-report-android
+        path: test-output/
+        if-no-files-found: ignore
