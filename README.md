@@ -168,7 +168,19 @@ This runs in two steps:
 | Workflow | Trigger | What it runs |
 |----------|---------|--------------|
 | **Smoke Tests** | Push/PR to `main` | Tagged `smoke` flows (currently being set up) |
-| **Regression Tests** | Daily at 06:00 UTC + manual | Tagged `regression` flows on both iOS and Android |
+| **Regression Tests** | Daily at 06:00 UTC + manual | Tagged `end-to-end` flows on iOS (macOS runner, iPhone simulator) and Android (Linux runner, emulator) |
+
+The regression workflow checks out and builds the dev app from `govuk-mobile-ios-app` and `govuk-mobile-android-app`, installs it, writes `.env` from repository secrets and runs `run-tests.sh`. The report (`test-output/`) is uploaded as a workflow artifact on every run.
+
+Repository secrets it needs (**Settings → Secrets and variables → Actions**):
+
+| Secret | Used for |
+|--------|----------|
+| `GOVUK_EMAIL` | One Login staging test account email |
+| `GOVUK_PASSWORD` | One Login staging test account password |
+| `GOVUK_TOTP_SECRET` | The account's authenticator-app secret (2FA) |
+| `CI_ACCESS_USERNAME` | GitHub user that owns the token below (Android build) |
+| `CI_ACCESS_TOKEN` | Classic token with `read:packages`, for the app's GitHub Packages dependency (Android build) |
 
 ## Conventions
 

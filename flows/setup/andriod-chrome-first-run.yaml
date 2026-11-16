@@ -1,0 +1,27 @@
+appId: com.android.chrome
+---
+
+# A new Android emulator opens Chrome on its welcome screens, which then cover
+# the One Login sign-in page. Run this once on a fresh emulator, before the
+# tests (the CI regression workflow does). Every step is optional, so it is
+# safe to run when Chrome has already been set up.
+# Not tagged, so --include-tags runs never pick it up.
+
+- launchApp
+- tapOn:
+    text: "Accept & continue"
+    optional: true
+    waitToSettleTimeoutMs: 5000
+- tapOn:
+    text: "Use without an account|Stay signed out|Continue without an account"
+    optional: true
+    waitToSettleTimeoutMs: 5000
+- tapOn:
+    text: "No thanks"
+    optional: true
+    waitToSettleTimeoutMs: 5000
+- tapOn:
+    text: "No thanks"
+    optional: true
+    waitToSettleTimeoutMs: 5000
+- stopApp
