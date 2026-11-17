@@ -152,12 +152,10 @@ jobs:
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@00854ea68c109d98c75d956347303bf7c45b0277 # pin@v3.2.1
-
     - name: Start emulator
       run: |
-        sdkmanager "system-images;android-34;google_apis;x86_64"
+        yes | sdkmanager --licenses >/dev/null 2>&1 || true
+        sdkmanager "system-images;android-34;google_apis;x86_64" "emulator"
         echo "no" | avdmanager create avd -n test -k "system-images;android-34;google_apis;x86_64"
         nohup emulator -avd test -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim &
         adb wait-for-device
