@@ -61,6 +61,9 @@ jobs:
         echo "UDID=$UDID" >> "$GITHUB_ENV"
 
     # Debug configuration = bundle id uk.gov.govuk.dev
+    # Sign to run locally ("-") rather than CODE_SIGNING_ALLOWED=NO: an unsigned
+    # build has no entitlements, so the app can't use the keychain and sign-in
+    # ends on "There was a problem signing you in".
     - name: Build app for the simulator
       working-directory: ios-app
       run: |
@@ -72,9 +75,9 @@ jobs:
           -sdk iphonesimulator \
           -destination "id=$UDID" \
           -derivedDataPath build \
-          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGN_IDENTITY=- \
           | tail -50
-
+    
     - name: Install app
       run: xcrun simctl install "$UDID" ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
 
