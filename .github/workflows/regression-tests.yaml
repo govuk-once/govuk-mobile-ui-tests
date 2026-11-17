@@ -152,20 +152,25 @@ jobs:
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
 
-    # The emulator only runs while this step's script runs, so install the
-    # app, prepare Chrome and run the tests here. Each line runs on its own.
-    - name: Start emulator and run regression tests
-      uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
-      with:
-        api-level: 34
-        arch: x86_64
-        target: google_apis
-        disable-animations: true
-        emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-        script: |
-          adb install -r android-app/app/build/outputs/apk/debug/app-debug.apk
-          ~/.maestro/bin/maestro test --device emulator-5554 flows/setup/android-chrome-first-run.yaml || true
-          ./run-tests.sh --device emulator-5554 --include-tags="$TEST_TAGS" flows/
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@00854ea68c109d98c75d956347303bf7c45b0277 # pin@v3.2.1
+
+    - name: Start emulator
+      run: |
+        sdkmanager "system-images;android-34;google_apis;x86_64"
+        echo "no" | avdmanager create avd -n test -k "system-images;android-34;google_apis;x86_64"
+        nohup emulator -avd test -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim &
+        adb wait-for-device
+        while [ "$(adb shell getprop sys.boot_completed 2>/dev/null)" != "1" ]; do sleep 2; done
+        adb shell settings put global window_animation_scale 0
+        adb shell settings put global transition_animation_scale 0
+        adb shell settings put global animator_duration_scale 0
+
+    - name: Install app and run regression tests
+      run: |
+        adb install -r android-app/app/build/outputs/apk/debug/app-debug.apk
+        ~/.maestro/bin/maestro test --device emulator-5554 flows/setup/android-chrome-first-run.yaml || true
+        ./run-tests.sh --device emulator-5554 --include-tags="$TEST_TAGS" flows/
 
     - name: Upload report
       if: always()
