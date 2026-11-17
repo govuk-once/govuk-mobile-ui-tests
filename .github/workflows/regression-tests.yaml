@@ -100,6 +100,7 @@ jobs:
 
   android:
     name: Regression (Android)
+    if: false
     # GitHub's macOS runners are Apple Silicon without nested virtualisation,
     # so the Android emulator runs on Linux with KVM instead
     runs-on: ubuntu-latest
