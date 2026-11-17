@@ -154,8 +154,9 @@ jobs:
 
     - name: Start emulator
       run: |
+        export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
         yes | sdkmanager --licenses >/dev/null 2>&1 || true
-        sdkmanager "system-images;android-34;google_apis;x86_64" "emulator"
+        sdkmanager "system-images;android-34;google_apis;x86_64" "emulator" "platform-tools"
         echo "no" | avdmanager create avd -n test -k "system-images;android-34;google_apis;x86_64"
         nohup emulator -avd test -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim &
         adb wait-for-device
