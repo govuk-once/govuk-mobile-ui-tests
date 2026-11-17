@@ -31,6 +31,18 @@ if [ -z "${GOVUK_TOTP_SECRET:-}" ]; then
   echo "Warning: GOVUK_TOTP_SECRET not set in .env — security code step will fail"
 fi
 
+# Prefer Maestro found on PATH (for example, a Homebrew installation), while
+# retaining support for the standard installer's default location.
+MAESTRO_BIN="${MAESTRO_BIN:-$(command -v maestro || true)}"
+if [ -z "$MAESTRO_BIN" ] && [ -x "$HOME/.maestro/bin/maestro" ]; then
+  MAESTRO_BIN="$HOME/.maestro/bin/maestro"
+fi
+if [ -z "$MAESTRO_BIN" ] || [ ! -x "$MAESTRO_BIN" ]; then
+  echo "Error: Maestro CLI not found or not executable."
+  echo "Install Maestro and ensure 'maestro' is on PATH, or set MAESTRO_BIN to its executable path."
+  exit 1
+fi
+
 # Pick a device unless one was passed. Without this Maestro picks whichever
 # device it finds first, which may be an emulator without the app installed.
 # Defaults to the iPhone 18 Pro simulator; override with DEVICE_ID or
@@ -59,7 +71,7 @@ fi
 # TOTP code is generated inline by flows/auth/sign-in.yaml (runScript)
 # so it is fresh when typed — not stale from script start.
 run_maestro() {
-  ~/.maestro/bin/maestro test \
+  "$MAESTRO_BIN" test \
     ${DEVICE_ARGS[@]+"${DEVICE_ARGS[@]}"} \
     -e GOVUK_EMAIL="$GOVUK_EMAIL" \
     -e GOVUK_PASSWORD="$GOVUK_PASSWORD" \
