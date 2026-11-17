@@ -1,8 +1,9 @@
 appId: uk.gov.govuk.dev
 ---
+# The app can take over a minute to start on slow devices (e.g. CI), so allow 2 minute
 - extendedWaitUntil:
       visible: "Accept and continue"
-      timeout: 60000
+      timeout: 120000
 - tapOn:
       text: "Accept and continue"
       waitToSettleTimeoutMs: 30000
