@@ -89,9 +89,13 @@ appId: uk.gov.govuk.dev
 
 - runFlow:
       when:
-          visible: "Save Password\\?"
+          platform: iOS
       commands:
-        - tapOn: "Not Now"
+        - runFlow:
+              when:
+                  visible: "Save Password\\?"
+              commands:
+                - tapOn: "Not Now"
 
 - extendedWaitUntil:
       visible: "Enter the 6 digit security code shown in your authenticator app"
