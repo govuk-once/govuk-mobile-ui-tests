@@ -1,5 +1,4 @@
 appId: uk.gov.govuk.dev
-
 ---
 
 # The terms screen is not always shown (e.g. if this account already accepted
@@ -12,4 +11,18 @@ appId: uk.gov.govuk.dev
     when:
       visible: "Terms and conditions"
     commands:
-      - tapOn: "Accept and continue"
+    - runFlow:
+        when:
+          platform: Android
+        commands:
+        - tapOn: "Accept and continue"
+    # iOS on slow devices (e.g. CI): the app can show this screen briefly and
+    # then skip it once it loads the account's earlier acceptance, so the
+    # button may already be gone.
+    - runFlow:
+        when:
+          platform: iOS
+        commands:
+        - tapOn:
+            text: "Accept and continue"
+            optional: true

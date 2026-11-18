@@ -1,5 +1,4 @@
 appId: uk.gov.govuk.dev
-
 ---
 
 # The app only asks new users. For an account that has signed in to the app
@@ -12,4 +11,22 @@ appId: uk.gov.govuk.dev
     when:
       visible: "Share statistics"
     commands:
-      - tapOn: "Share statistics"
+    - runFlow:
+        when:
+          platform: Android
+        commands:
+        - tapOn: "Share statistics"
+    # iOS on slow devices (e.g. CI): the first tap can land before the screen
+    # is ready, and the next screen can take a while to appear, so retry the
+    # tap if nothing changed and wait for the screen to move on.
+    - runFlow:
+        when:
+          platform: iOS
+        commands:
+        - tapOn:
+            text: "Share statistics"
+            waitToSettleTimeoutMs: 5000
+            retryTapIfNoChange: true
+        - extendedWaitUntil:
+            notVisible: "Share statistics"
+            timeout: 60000
