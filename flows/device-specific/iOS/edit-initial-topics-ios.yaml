@@ -49,20 +49,20 @@ appId: uk.gov.govuk.dev
       centerElement: true
 - tapOn: "Parenting and guardianship.*"
 
+# The last topics sit near the bottom of the list, where they can't be
+# scrolled to the centre, so centerElement would keep scrolling until it
+# times out. They are clear of the header there, so just scroll them into view.
 - scrollUntilVisible:
       element:
           text: "Retirement.*"
-      centerElement: true
 - tapOn: "Retirement.*"
 
 - scrollUntilVisible:
       element:
           text: "Studying and training.*"
-      centerElement: true
 - tapOn: "Studying and training.*"
 
 - scrollUntilVisible:
       element:
           text: "Travel abroad.*"
-      centerElement: true
 - tapOn: "Travel abroad.*"

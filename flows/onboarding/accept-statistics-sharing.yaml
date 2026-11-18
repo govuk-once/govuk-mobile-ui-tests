@@ -3,9 +3,21 @@ appId: uk.gov.govuk.dev
 
 # The app only asks new users. For an account that has signed in to the app
 # before, it restores the previous choice and skips this screen.
-- extendedWaitUntil:
-    visible: "Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
-    timeout: 20000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+    - extendedWaitUntil:
+        visible: "Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+        timeout: 20000
+# iOS on slow devices (e.g. CI) can take longer than 20s to show the next screen
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+    - extendedWaitUntil:
+        visible: "Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+        timeout: 60000
 
 - runFlow:
     when:
@@ -16,17 +28,24 @@ appId: uk.gov.govuk.dev
           platform: Android
         commands:
         - tapOn: "Share statistics"
-    # iOS on slow devices (e.g. CI): the first tap can land before the screen
-    # is ready, and the next screen can take a while to appear, so retry the
-    # tap if nothing changed and wait for the screen to move on.
+    # iOS on slow devices (e.g. CI): a tap can reach the app without the
+    # screen moving on, so tap again (up to 3 times) while it is still
+    # showing, giving the next screen time to appear after each tap.
     - runFlow:
         when:
           platform: iOS
         commands:
-        - tapOn:
-            text: "Share statistics"
-            waitToSettleTimeoutMs: 5000
-            retryTapIfNoChange: true
-        - extendedWaitUntil:
-            notVisible: "Share statistics"
-            timeout: 60000
+        - repeat:
+            while:
+              visible: "Share statistics"
+            times: 3
+            commands:
+            - tapOn:
+                text: "Share statistics"
+                waitToSettleTimeoutMs: 5000
+                optional: true
+            - extendedWaitUntil:
+                notVisible: "Share statistics"
+                timeout: 20000
+                optional: true
+        - assertNotVisible: "Share statistics"

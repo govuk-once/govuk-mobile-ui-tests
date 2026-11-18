@@ -3,9 +3,21 @@ appId: uk.gov.govuk.dev
 
 # The terms screen is not always shown (e.g. if this account already accepted
 # them), so wait for it or any later onboarding screen, then accept if shown.
-- extendedWaitUntil:
-    visible: "Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
-    timeout: 20000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+    - extendedWaitUntil:
+        visible: "Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+        timeout: 20000
+# iOS on slow devices (e.g. CI) can take longer than 20s to show the next screen
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+    - extendedWaitUntil:
+        visible: "Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+        timeout: 60000
 
 - runFlow:
     when:
