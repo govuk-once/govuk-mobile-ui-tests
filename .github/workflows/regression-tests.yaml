@@ -20,7 +20,7 @@ env:
 jobs:
   ios:
     name: Regression (iOS)
-    runs-on: macos-26
+    runs-on: macos-27
     timeout-minutes: 90
 
     steps:
