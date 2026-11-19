@@ -1,0 +1,13 @@
+appId: uk.gov.govuk.dev
+---
+# On iOS 26 the keyboard's toolbar (with ⌃ ⌄ ✓) can cover the web page's
+# Continue button, so a tap on "Continue" lands on the toolbar instead.
+# Close the keyboard with its "Done" (✓) button first. Optional, so it does
+# nothing when no on-screen keyboard is showing (e.g. hardware keyboard on).
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+    - tapOn:
+        text: "Done"
+        optional: true

@@ -18,86 +18,6 @@ env:
   TEST_TAGS: end-to-end
 
 jobs:
-  # ios:
-  #   name: Regression (iOS)
-  #   runs-on: macos-26
-  #   timeout-minutes: 90
-  #
-  #   steps:
-  #   - name: Checkout tests
-  #     uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # pin@v4.1.5
-  #
-  #   - name: Checkout iOS app
-  #     uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # pin@v4.1.5
-  #     with:
-  #       repository: govuk-once/govuk-mobile-ios-app
-  #       path: ios-app
-  #       lfs: true
-  #
-  #   - name: Setup Java (for Maestro)
-  #     uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # pin@v4.2.1
-  #     with:
-  #       distribution: temurin
-  #       java-version: 21
-  #
-  #   - name: Install Maestro
-  #     run: |
-  #       curl -Ls "https://get.maestro.mobile.dev" | bash
-  #       echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
-  #
-  #   # run-tests.sh looks for an iPhone 18 Pro by default, which the runner
-  #   # may not have, so use the first available iPhone and pass it with --device
-  #   - name: Boot iPhone simulator
-  #     run: |
-  #       UDID=$(xcrun simctl list devices available | grep -E '^    iPhone' | head -1 | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
-  #       if [ -z "$UDID" ]; then
-  #         echo "No iPhone simulator found"
-  #         xcrun simctl list devices available
-  #         exit 1
-  #       fi
-  #       xcrun simctl list devices available | grep "$UDID"
-  #       xcrun simctl boot "$UDID"
-  #       xcrun simctl bootstatus "$UDID" -b
-  #       echo "UDID=$UDID" >> "$GITHUB_ENV"
-  #
-  #   # Debug configuration = bundle id uk.gov.govuk.dev
-  #   - name: Build app for the simulator
-  #     working-directory: ios-app
-  #     run: |
-  #       set -o pipefail
-  #       xcodebuild build \
-  #         -project GovUK.xcodeproj \
-  #         -scheme GovUK \
-  #         -configuration Debug \
-  #         -sdk iphonesimulator \
-  #         -destination "id=$UDID" \
-  #         -derivedDataPath build \
-  #         CODE_SIGNING_ALLOWED=NO \
-  #         | tail -50
-  #
-  #   - name: Install app
-  #     run: xcrun simctl install "$UDID" ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
-  #
-  #   - name: Create .env from secrets
-  #     env:
-  #       GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
-  #       GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
-  #       GOVUK_TOTP_SECRET: ${{ secrets.GOVUK_TOTP_SECRET }}
-  #     run: |
-  #       printf 'GOVUK_EMAIL=%q\nGOVUK_PASSWORD=%q\nGOVUK_TOTP_SECRET=%q\nRETRY=1\n' \
-  #         "$GOVUK_EMAIL" "$GOVUK_PASSWORD" "$GOVUK_TOTP_SECRET" > .env
-  #
-  #   - name: Run regression tests
-  #     run: ./run-tests.sh --device "$UDID" --include-tags="$TEST_TAGS" flows/
-  #
-  #   - name: Upload report
-  #     if: always()
-  #     uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # pin@v4.3.3
-  #     with:
-  #       name: regression-report-ios
-  #       path: test-output/
-  #       if-no-files-found: ignore
-
   android:
     name: Regression (Android)
     # GitHub's macOS runners are Apple Silicon without nested virtualisation,
@@ -218,5 +138,88 @@ jobs:
       uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # pin@v4.3.3
       with:
         name: regression-report-android
+        path: test-output/
+        if-no-files-found: ignore
+
+  ios:
+    name: Regression (iOS)
+    runs-on: macos-27
+    timeout-minutes: 90
+
+    steps:
+    - name: Checkout tests
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # pin@v4.1.5
+
+    - name: Checkout iOS app
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # pin@v4.1.5
+      with:
+        repository: govuk-once/govuk-mobile-ios-app
+        path: ios-app
+        lfs: true
+
+    - name: Setup Java (for Maestro)
+      uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # pin@v4.2.1
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Install Maestro
+      run: |
+        curl -Ls "https://get.maestro.mobile.dev" | bash
+        echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+    # run-tests.sh looks for an iPhone 18 Pro by default, which the runner
+    # may not have, so use the first available iPhone and pass it with --device
+    - name: Boot iPhone simulator
+      run: |
+        UDID=$(xcrun simctl list devices available | grep -E '^    iPhone' | head -1 | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+        if [ -z "$UDID" ]; then
+          echo "No iPhone simulator found"
+          xcrun simctl list devices available
+          exit 1
+        fi
+        xcrun simctl list devices available | grep "$UDID"
+        xcrun simctl boot "$UDID"
+        xcrun simctl bootstatus "$UDID" -b
+        echo "UDID=$UDID" >> "$GITHUB_ENV"
+
+    # Debug configuration = bundle id uk.gov.govuk.dev
+    # Sign to run locally ("-") rather than CODE_SIGNING_ALLOWED=NO: an unsigned
+    # build has no entitlements, so the app can't use the keychain and sign-in
+    # ends on "There was a problem signing you in".
+    - name: Build app for the simulator
+      working-directory: ios-app
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -project GovUK.xcodeproj \
+          -scheme GovUK \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination "id=$UDID" \
+          -derivedDataPath build \
+          CODE_SIGN_IDENTITY=- \
+          | tail -50
+
+    - name: Install app
+      run: xcrun simctl install "$UDID" ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
+
+    - name: Create .env from secrets
+      env:
+        GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
+        GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
+        GOVUK_TOTP_SECRET: ${{ secrets.GOVUK_TOTP_SECRET }}
+      run: |
+        printf 'GOVUK_EMAIL=%q\nGOVUK_PASSWORD=%q\nGOVUK_TOTP_SECRET=%q\nRETRY=1\n' \
+          "$GOVUK_EMAIL" "$GOVUK_PASSWORD" "$GOVUK_TOTP_SECRET" > .env
+
+    - name: Run regression tests
+      run: ./run-tests.sh --device "$UDID" --include-tags="$TEST_TAGS" flows/
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # pin@v4.3.3
+      with:
+        name: regression-report-ios
         path: test-output/
         if-no-files-found: ignore

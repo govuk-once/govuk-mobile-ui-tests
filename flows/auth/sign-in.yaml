@@ -1,8 +1,9 @@
 appId: uk.gov.govuk.dev
 ---
+# The app can take over a minute to start on slow devices (e.g. CI), so allow 2 minute
 - extendedWaitUntil:
       visible: "Accept and continue"
-      timeout: 60000
+      timeout: 120000
 - tapOn:
       text: "Accept and continue"
       waitToSettleTimeoutMs: 30000
@@ -70,12 +71,14 @@ appId: uk.gov.govuk.dev
               text: "Enter your email address to sign in to your GOV.UK One Login"
               waitToSettleTimeoutMs: 10000
         - inputText: ${GOVUK_EMAIL}
+        - runFlow: close-keyboard.yaml
         - tapOn: "Continue"
 
         - tapOn:
               text: "Enter your password"
               waitToSettleTimeoutMs: 10000
         - inputText: ${GOVUK_PASSWORD}
+        - runFlow: close-keyboard.yaml
         - tapOn: "Continue"
 
         # Chrome on Android may offer to save the password. Close it with Back only if
@@ -123,6 +126,7 @@ appId: uk.gov.govuk.dev
               env:
                   GOVUK_TOTP_SECRET: ${GOVUK_TOTP_SECRET}
         - inputText: ${output.totp}
+        - runFlow: close-keyboard.yaml
         - tapOn: "Continue"
 
         # One Login may offer to set up a passkey after sign-in. Wait for either that
