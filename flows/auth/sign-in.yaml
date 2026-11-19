@@ -35,87 +35,105 @@ appId: uk.gov.govuk.dev
               text: "Visit Website"
               optional: true
 
-- tapOn: "Sign in"
+# A persisted One Login session can take the app straight to onboarding instead
+# of showing the login page again.
+- extendedWaitUntil:
+      visible: "Sign in|Enter your email address to sign in to your GOV.UK One Login|Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics|Sign in faster with your face.*"
+      timeout: 60000
 
-# The One Login landing page can load after the tap above, leaving its own
-# "Sign in" button untapped. Keep tapping it until the email field appears.
-- repeat:
-      while:
-          notVisible: "Enter your email address to sign in to your GOV.UK One Login"
-      times: 5
+- runFlow:
+      when:
+          visible: "^Sign in$|Enter your email address to sign in to your GOV.UK One Login"
       commands:
-        # The page heading is not readable as text, so detect it by its button
         - runFlow:
               when:
-                  visible: "Create your GOV.UK One Login"
+                  visible: "^Sign in$"
               commands:
                 - tapOn: "Sign in"
-        - waitForAnimationToEnd:
-              timeout: 3000
 
-- tapOn:
-      text: "Enter your email address to sign in to your GOV.UK One Login"
-      waitToSettleTimeoutMs: 10000
-- inputText: ${GOVUK_EMAIL}
-- runFlow: close-keyboard.yaml
-- tapOn: "Continue"
+        # The One Login landing page can load after the tap above, leaving its
+        # own "Sign in" button untapped. Keep tapping until the email field appears.
+        - repeat:
+              while:
+                  notVisible: "Enter your email address to sign in to your GOV.UK One Login"
+              times: 5
+              commands:
+                # The page heading is not readable as text, so detect it by its button
+                - runFlow:
+                      when:
+                          visible: "Create your GOV.UK One Login"
+                      commands:
+                        - tapOn: "Sign in"
+                - waitForAnimationToEnd:
+                      timeout: 3000
 
-- tapOn:
-      text: "Enter your password"
-      waitToSettleTimeoutMs: 10000
-- inputText: ${GOVUK_PASSWORD}
-- runFlow: close-keyboard.yaml
-- tapOn: "Continue"
+        - tapOn:
+              text: "Enter your email address to sign in to your GOV.UK One Login"
+              waitToSettleTimeoutMs: 10000
+        - inputText: ${GOVUK_EMAIL}
+        - runFlow: close-keyboard.yaml
+        - tapOn: "Continue"
 
-# Chrome on Android may offer to save the password. Close it with Back only if
-# it is showing; otherwise Back would take the browser back to the email page.
-- runFlow:
-      when:
-          platform: Android
-      commands:
-        - waitForAnimationToEnd:
-              timeout: 5000
+        - tapOn:
+              text: "Enter your password"
+              waitToSettleTimeoutMs: 10000
+        - inputText: ${GOVUK_PASSWORD}
+        - runFlow: close-keyboard.yaml
+        - tapOn: "Continue"
+
+        # Chrome on Android may offer to save the password. Close it with Back only if
+        # it is showing; otherwise Back would take the browser back to the email page.
         - runFlow:
               when:
-                  visible: "Save password.*|.*Password Manager.*"
+                  platform: Android
               commands:
-                - pressKey: "Back"
+                - waitForAnimationToEnd:
+                      timeout: 5000
+                - runFlow:
+                      when:
+                          visible: "Save password.*|.*Password Manager.*"
+                      commands:
+                        - pressKey: "Back"
 
-- waitForAnimationToEnd:
-      timeout: 5000
+        - waitForAnimationToEnd:
+              timeout: 5000
 
-# iOS may offer to save the password (e.g. on a fresh simulator). Wait for that
-# dialog or the security code page, and dismiss the dialog if it appeared.
-- extendedWaitUntil:
-      visible: "Save Password\\?|Enter the 6 digit security code shown in your authenticator app"
-      timeout: 20000
+        # iOS may offer to save the password (e.g. on a fresh simulator). Wait for that
+        # dialog or the security code page, and dismiss the dialog if it appeared.
+        - extendedWaitUntil:
+              visible: "Save Password\\?|Enter the 6 digit security code shown in your authenticator app"
+              timeout: 20000
 
-- runFlow:
-      when:
-          visible: "Save Password\\?"
-      commands:
-        - tapOn: "Not Now"
+        - runFlow:
+              when:
+                  platform: iOS
+              commands:
+                - runFlow:
+                      when:
+                          visible: "Save Password\\?"
+                      commands:
+                        - tapOn: "Not Now"
 
-- extendedWaitUntil:
-      visible: "Enter the 6 digit security code shown in your authenticator app"
-      timeout: 20000
+        - extendedWaitUntil:
+              visible: "Enter the 6 digit security code shown in your authenticator app"
+              timeout: 20000
 
-- tapOn:
-      text: "Enter the 6 digit security code shown in your authenticator app"
-      waitToSettleTimeoutMs: 5000
-- runScript:
-      file: ../../scripts/generate-totp.js
-      env:
-          GOVUK_TOTP_SECRET: ${GOVUK_TOTP_SECRET}
-- inputText: ${output.totp}
-- runFlow: close-keyboard.yaml
-- tapOn: "Continue"
+        - tapOn:
+              text: "Enter the 6 digit security code shown in your authenticator app"
+              waitToSettleTimeoutMs: 5000
+        - runScript:
+              file: ../../scripts/generate-totp.js
+              env:
+                  GOVUK_TOTP_SECRET: ${GOVUK_TOTP_SECRET}
+        - inputText: ${output.totp}
+        - runFlow: close-keyboard.yaml
+        - tapOn: "Continue"
 
-# One Login may offer to set up a passkey after sign-in. Wait for either that
-# page or the next app screen, then skip the passkey if it was offered.
-- extendedWaitUntil:
-      visible: "Sign in faster with your face.*|Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
-      timeout: 120000
+        # One Login may offer to set up a passkey after sign-in. Wait for either that
+        # page or the next app screen, then skip the passkey if it was offered.
+        - extendedWaitUntil:
+              visible: "Sign in faster with your face.*|Terms and conditions|Share statistics|Select relevant topics|Allow notifications\\?|Your topics"
+              timeout: 120000
 
 - runFlow:
       when:

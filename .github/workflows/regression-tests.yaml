@@ -18,9 +18,132 @@ env:
   TEST_TAGS: end-to-end
 
 jobs:
+  android:
+    name: Regression (Android)
+    # GitHub's macOS runners are Apple Silicon without nested virtualisation,
+    # so the Android emulator runs on Linux with KVM instead
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+    - name: Checkout tests
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # pin@v4.1.5
+
+    - name: Checkout Android app
+      uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # pin@v4.1.5
+      with:
+        repository: govuk-once/govuk-mobile-android-app
+        path: android-app
+
+    - name: Setup Java
+      uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # pin@v4.2.1
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # pin@v4.4.4
+
+    # The app's settings.gradle.kts reads these when github.properties is absent
+    - name: Build debug APK
+      working-directory: android-app
+      env:
+        CI_ACCESS_USERNAME: ${{ secrets.CI_ACCESS_USERNAME }}
+        CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
+      run: ./gradlew :app:assembleDebug --no-configuration-cache
+
+    - name: Install Maestro
+      run: |
+        curl -Ls "https://get.maestro.mobile.dev" | bash
+        echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+    - name: Create .env from secrets
+      env:
+        GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
+        GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
+        GOVUK_TOTP_SECRET: ${{ secrets.GOVUK_TOTP_SECRET }}
+      run: |
+        printf 'GOVUK_EMAIL=%q\nGOVUK_PASSWORD=%q\nGOVUK_TOTP_SECRET=%q\nRETRY=1\n' \
+          "$GOVUK_EMAIL" "$GOVUK_PASSWORD" "$GOVUK_TOTP_SECRET" > .env
+
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Start emulator
+      run: |
+        echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+        echo "$ANDROID_HOME/emulator" >> "$GITHUB_PATH"
+        echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+        export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+        yes | sdkmanager --licenses >/dev/null 2>&1 || true
+        sdkmanager "system-images;android-34;google_apis;x86_64" "emulator" "platform-tools"
+        mkdir -p "$HOME/.android/avd/test.avd"
+        cat > "$HOME/.android/avd/test.ini" <<EOF
+        avd.ini.encoding=UTF-8
+        path=$HOME/.android/avd/test.avd
+        path.rel=avd/test.avd
+        target=android-34
+        EOF
+        cat > "$HOME/.android/avd/test.avd/config.ini" <<EOF
+        AvdId=test
+        PlayStore.enabled=false
+        abi.type=x86_64
+        avd.ini.displayname=test
+        avd.ini.encoding=UTF-8
+        disk.dataPartition.size=6442450944
+        hw.accelerometer=yes
+        hw.audioInput=yes
+        hw.battery=yes
+        hw.cpu.arch=x86_64
+        hw.cpu.ncore=4
+        hw.dPad=no
+        hw.device.manufacturer=Google
+        hw.device.name=pixel_6
+        hw.gps=yes
+        hw.gpu.enabled=yes
+        hw.gpu.mode=auto
+        hw.initialOrientation=Portrait
+        hw.keyboard=yes
+        hw.lcd.density=420
+        hw.lcd.height=2400
+        hw.lcd.width=1080
+        hw.mainKeys=no
+        hw.ramSize=2048
+        hw.sdCard=yes
+        hw.sensors.orientation=yes
+        hw.sensors.proximity=yes
+        hw.trackBall=no
+        image.sysdir.1=$ANDROID_HOME/system-images/android-34/google_apis/x86_64/
+        tag.display=Google APIs
+        tag.id=google_apis
+        EOF
+        nohup emulator -avd test -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim &
+        adb wait-for-device
+        while [ "$(adb shell getprop sys.boot_completed 2>/dev/null)" != "1" ]; do sleep 2; done
+        adb shell settings put global window_animation_scale 0
+        adb shell settings put global transition_animation_scale 0
+        adb shell settings put global animator_duration_scale 0
+
+    - name: Install app and run regression tests
+      run: |
+        adb install -r android-app/app/build/outputs/apk/debug/app-debug.apk
+        ~/.maestro/bin/maestro test --device emulator-5554 flows/setup/android-chrome-first-run.yaml || true
+        ./run-tests.sh --device emulator-5554 --include-tags="$TEST_TAGS" flows/
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # pin@v4.3.3
+      with:
+        name: regression-report-android
+        path: test-output/
+        if-no-files-found: ignore
+
   ios:
     name: Regression (iOS)
-    runs-on: macos-27
+    runs-on: macos-26
     timeout-minutes: 90
 
     steps:
@@ -77,7 +200,7 @@ jobs:
           -derivedDataPath build \
           CODE_SIGN_IDENTITY=- \
           | tail -50
-    
+
     - name: Install app
       run: xcrun simctl install "$UDID" ios-app/build/Build/Products/Debug-iphonesimulator/govuk_ios.app
 
@@ -100,79 +223,3 @@ jobs:
         name: regression-report-ios
         path: test-output/
         if-no-files-found: ignore
-  # android:
-  #   name: Regression (Android)
-  #   # GitHub's macOS runners are Apple Silicon without nested virtualisation,
-  #   # so the Android emulator runs on Linux with KVM instead
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 90
-  #
-  #   steps:
-  #   - name: Checkout tests
-  #     uses: actions/checkout@v4
-  #
-  #   - name: Checkout Android app
-  #     uses: actions/checkout@v4
-  #     with:
-  #       repository: govuk-once/govuk-mobile-android-app
-  #       path: android-app
-  #
-  #   - name: Setup Java
-  #     uses: actions/setup-java@v4
-  #     with:
-  #       distribution: temurin
-  #       java-version: 21
-  #
-  #   - name: Setup Gradle
-  #     uses: gradle/actions/setup-gradle@v4
-  #
-  #   # The app's settings.gradle.kts reads these when github.properties is absent
-  #   - name: Build debug APK
-  #     working-directory: android-app
-  #     env:
-  #       CI_ACCESS_USERNAME: ${{ secrets.CI_ACCESS_USERNAME }}
-  #       CI_ACCESS_TOKEN: ${{ secrets.CI_ACCESS_TOKEN }}
-  #     run: ./gradlew :app:assembleDebug --no-configuration-cache
-  #
-  #   - name: Install Maestro
-  #     run: |
-  #       curl -Ls "https://get.maestro.mobile.dev" | bash
-  #       echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
-  #
-  #   - name: Create .env from secrets
-  #     env:
-  #       GOVUK_EMAIL: ${{ secrets.GOVUK_EMAIL }}
-  #       GOVUK_PASSWORD: ${{ secrets.GOVUK_PASSWORD }}
-  #       GOVUK_TOTP_SECRET: ${{ secrets.GOVUK_TOTP_SECRET }}
-  #     run: |
-  #       printf 'GOVUK_EMAIL=%q\nGOVUK_PASSWORD=%q\nGOVUK_TOTP_SECRET=%q\nRETRY=1\n' \
-  #         "$GOVUK_EMAIL" "$GOVUK_PASSWORD" "$GOVUK_TOTP_SECRET" > .env
-  #
-  #   - name: Enable KVM
-  #     run: |
-  #       echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-  #       sudo udevadm control --reload-rules
-  #       sudo udevadm trigger --name-match=kvm
-  #
-  #   # The emulator only runs while this step's script runs, so install the
-  #   # app, prepare Chrome and run the tests here. Each line runs on its own.
-  #   - name: Start emulator and run regression tests
-  #     uses: reactivecircus/android-emulator-runner@v2
-  #     with:
-  #       api-level: 34
-  #       arch: x86_64
-  #       target: google_apis
-  #       disable-animations: true
-  #       emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-  #       script: |
-  #         adb install -r android-app/app/build/outputs/apk/debug/app-debug.apk
-  #         ~/.maestro/bin/maestro test --device emulator-5554 flows/setup/android-chrome-first-run.yaml || true
-  #         ./run-tests.sh --device emulator-5554 --include-tags="$TEST_TAGS" flows/
-  #
-  #   - name: Upload report
-  #     if: always()
-  #     uses: actions/upload-artifact@v4
-  #     with:
-  #       name: regression-report-android
-  #       path: test-output/
-  #       if-no-files-found: ignore
