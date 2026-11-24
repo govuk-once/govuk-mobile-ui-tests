@@ -1,19 +1,17 @@
 appId: uk.gov.govuk.dev
-
 ---
 
-- assertVisible:
-    text: "Allow notifications\\?"
-    waitToSettleTimeoutMs: 10000
-
+- extendedWaitUntil:
+    visible: "Allow notifications\\?"
+    timeout: 30000
 - runFlow:
     when:
       platform: iOS
     commands:
-      - tapOn:
-          text: "Not now"
-          waitToSettleTimeoutMs: 5000
-          retryTapIfNoChange: true
+    - tapOn:
+        text: "Not now"
+        waitToSettleTimeoutMs: 5000
+        retryTapIfNoChange: true
 
 # Android has no "Not now" button. Tapping "Turn off notifications" opens a
 # settings-redirect dialog that doesn't advance the flow. Instead, tap "Allow
@@ -22,11 +20,11 @@ appId: uk.gov.govuk.dev
     when:
       platform: Android
     commands:
-      - tapOn:
-          text: "Allow notifications"
-          waitToSettleTimeoutMs: 5000
-          retryTapIfNoChange: true
-      - tapOn:
-          text: "Don't allow"
-          optional: true
-          waitToSettleTimeoutMs: 5000
+    - tapOn:
+        text: "Allow notifications"
+        waitToSettleTimeoutMs: 5000
+        retryTapIfNoChange: true
+    - tapOn:
+        text: "Don't allow"
+        optional: true
+        waitToSettleTimeoutMs: 5000

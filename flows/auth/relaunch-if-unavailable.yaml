@@ -1,0 +1,22 @@
+appId: uk.gov.govuk.dev
+---
+
+# The app shows "Sorry, the app is unavailable" when it cannot load its remote
+# config at start-up, usually a short backend blip on CI. Relaunch it up to 3
+# times, waiting between tries. If it stays unavailable, the caller's next check
+# fails with this screen in the report, so a real outage still fails the test.
+- repeat:
+    while:
+      visible: "Sorry, the app is unavailable"
+    times: 3
+    commands:
+    # Give the backend time to recover before relaunching
+    - extendedWaitUntil:
+        notVisible: "Sorry, the app is unavailable"
+        timeout: 20000
+        optional: true
+    - stopApp
+    - launchApp
+    - extendedWaitUntil:
+        visible: "Accept and continue|Your topics|Sorry, the app is unavailable"
+        timeout: 120000

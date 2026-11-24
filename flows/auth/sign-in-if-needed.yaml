@@ -1,5 +1,4 @@
 appId: uk.gov.govuk.dev
-
 ---
 
 # Without Face ID set up (e.g. on a simulator) the app signs the user out
@@ -8,8 +7,12 @@ appId: uk.gov.govuk.dev
 
 # Wait until the app has decided: welcome screen (signed out) or home (signed in)
 - extendedWaitUntil:
-    visible: "Accept and continue|Your topics"
+    visible: "Accept and continue|Your topics|Sorry, the app is unavailable"
     timeout: 20000
+
+- runFlow: relaunch-if-unavailable.yaml
+
+- assertVisible: "Accept and continue|Your topics"
 
 - runFlow:
     when:
