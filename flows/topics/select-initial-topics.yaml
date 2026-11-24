@@ -1,5 +1,4 @@
 appId: uk.gov.govuk.dev
-
 ---
 
 - scrollUntilVisible:
@@ -31,4 +30,18 @@ appId: uk.gov.govuk.dev
 - assertVisible: "Travel abroad.*"
 - tapOn: "Travel abroad.*"
 
-- tapOn: "Done"
+# The Done tap can land while the list is still settling after the scroll above
+# and be ignored, leaving the topics screen open. Tap again while it's showing.
+- tapOn:
+    text: "Done"
+    waitToSettleTimeoutMs: 5000
+    retryTapIfNoChange: true
+- repeat:
+    while:
+      visible: "Done"
+      notVisible: "Allow notifications\\?|Your topics"
+    times: 3
+    commands:
+    - tapOn: "Done"
+    - waitForAnimationToEnd:
+        timeout: 3000
